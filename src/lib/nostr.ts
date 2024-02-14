@@ -1,31 +1,27 @@
 import { Relay, kinds } from "nostr-tools";
-import type { Event } from "nostr-tools";
+import type { Event, Subscription } from "nostr-tools";
 
-export async function getAllCommunities(relay: Relay): Promise<Community[]> {
-	return new Promise((resolve, reject) => {
-		let res: Community[] = [];
-		try {
-			const sub = relay.subscribe([
-				{
-					kinds: [kinds.CommunityDefinition],
-					limit: 10,
-				},
-			], {
-				onevent(event) {
-					res.push(parseCommunityDefinition(event))
-				},
-				oneose() {
-					sub.close()
-					resolve(res)
-				}
-			})
-		} catch (e) {
-			reject(e)
-		}
-	});
+export function getAllCommunities(relay: Relay, onEvent: (evt: Community) => void): Subscription {
+	let res: Community[] = [];
+	try {
+		const sub = relay.subscribe([
+			{
+				kinds: [kinds.CommunityDefinition],
+			},
+		], {
+			onevent(event) { onEvent(parseCommunityDefinition(event)) },
+			oneose() {
+				sub.close()
+			}
+		})
+
+		return sub;
+	} catch (e) {
+		throw new Error('Failed to get communities')
+	}
 }
 
-type Community = {
+export type Community = {
 	id: string;
 	description: string;
 	image: string;
@@ -71,8 +67,6 @@ export function parseCommunityDefinition(event: Event): Community {
 		moderators,
 		relays,
 	};
-
-	console.log(community);
 
 	return community;
 }
