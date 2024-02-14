@@ -7,9 +7,14 @@ export function getAllCommunities(relay: Relay, onEvent: (evt: Community) => voi
 		const sub = relay.subscribe([
 			{
 				kinds: [kinds.CommunityDefinition],
+				limit: 20,
 			},
 		], {
-			onevent(event) { onEvent(parseCommunityDefinition(event)) },
+			async onevent(event) {
+				let community = parseCommunityDefinition(event);
+				community.subscribers = await getCommunitySubscribers(relay, community);
+				onEvent(community);
+			},
 			oneose() {
 				sub.close()
 			}
@@ -22,11 +27,13 @@ export function getAllCommunities(relay: Relay, onEvent: (evt: Community) => voi
 }
 
 export type Community = {
+	author: string;
 	id: string;
 	description: string;
 	image: string;
 	moderators: string[];
 	relays: string[];
+	subscribers?: number;
 };
 
 export function parseCommunityDefinition(event: Event): Community {
@@ -34,6 +41,7 @@ export function parseCommunityDefinition(event: Event): Community {
 		throw new Error('Invalid event kind');
 	}
 
+	let author = event.pubkey;
 	let id = '';
 	let description = '';
 	let image = '';
@@ -61,6 +69,7 @@ export function parseCommunityDefinition(event: Event): Community {
 	}
 
 	const community: Community = {
+		author,
 		id,
 		description,
 		image,
@@ -69,4 +78,27 @@ export function parseCommunityDefinition(event: Event): Community {
 	};
 
 	return community;
+}
+
+export async function getCommunitySubscribers(relay: Relay, community: Community) {
+
+	return await new Promise<number>((resolve) => {
+		let count = 0;
+		try {
+			const sub = relay.subscribe([
+				{
+					kinds: [kinds.CommunitiesList],
+					"#a": [`${kinds.CommunityDefinition}:${community.author}:${community.id}`]
+				},
+			], {
+				onevent(_) { count++ },
+				oneose() {
+					sub.close()
+					resolve(count)
+				}
+			})
+		} catch (e) {
+			throw new Error('Failed to get community subscribers')
+		}
+	});
 }
