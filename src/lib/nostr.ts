@@ -1,34 +1,32 @@
 import { Relay, kinds } from "nostr-tools";
-import type { Event, Subscription } from "nostr-tools";
+import { relayPool, relays } from "$lib/stores";
+import type { Event, SubCloser, Subscription } from "nostr-tools";
+import { get } from "svelte/store";
 
-export function getAllCommunities(relay: Relay, onEvent: (evt: Community) => void): Subscription {
-	let res: Community[] = [];
+export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser {
 	try {
-		const sub = relay.subscribe([
+		return relayPool.subscribeManyEose(get(relays), [
 			{
 				kinds: [kinds.CommunityDefinition],
 				limit: 20,
-			},
-		], {
-			async onevent(event) {
-				let community = parseCommunityDefinition(event);
-				community.subscribers = await getCommunitySubscribers(relay, community);
-				onEvent(community);
-			},
-			oneose() {
-				sub.close()
 			}
-		})
-
-		return sub;
+		]
+			, {
+				async onevent(event) {
+					let community = parseCommunityDefinition(event);
+					community.subscribers = await getCommunitySubscribers(community);
+					onEvent(community);
+				},
+			})
 	} catch (e) {
 		throw new Error('Failed to get communities')
 	}
 }
 
 export type Community = {
-	author: string;
 	id: string;
+	author: string;
+	name: string;
 	description: string;
 	image: string;
 	moderators: string[];
@@ -41,8 +39,9 @@ export function parseCommunityDefinition(event: Event): Community {
 		throw new Error('Invalid event kind');
 	}
 
+	let id = event.id;
 	let author = event.pubkey;
-	let id = '';
+	let name = '';
 	let description = '';
 	let image = '';
 	let moderators: string[] = [];
@@ -51,7 +50,7 @@ export function parseCommunityDefinition(event: Event): Community {
 	for (const tag of event.tags) {
 		switch (tag[0]) {
 			case 'd':
-				id = tag[1];
+				name = tag[1];
 				break;
 			case 'description':
 				description = tag[1];
@@ -69,8 +68,9 @@ export function parseCommunityDefinition(event: Event): Community {
 	}
 
 	const community: Community = {
-		author,
 		id,
+		author,
+		name: name,
 		description,
 		image,
 		moderators,
@@ -80,25 +80,15 @@ export function parseCommunityDefinition(event: Event): Community {
 	return community;
 }
 
-export async function getCommunitySubscribers(relay: Relay, community: Community) {
-
-	return await new Promise<number>((resolve) => {
-		let count = 0;
-		try {
-			const sub = relay.subscribe([
-				{
-					kinds: [kinds.CommunitiesList],
-					"#a": [`${kinds.CommunityDefinition}:${community.author}:${community.id}`]
-				},
-			], {
-				onevent(_) { count++ },
-				oneose() {
-					sub.close()
-					resolve(count)
-				}
-			})
-		} catch (e) {
-			throw new Error('Failed to get community subscribers')
-		}
-	});
+export async function getCommunitySubscribers(community: Community) {
+	try {
+		let events = await relayPool.querySync(get(relays),
+			{
+				kinds: [kinds.CommunitiesList],
+				"#a": [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
+			});
+		return (new Set(events)).size;;
+	} catch (e) {
+		throw new Error('Failed to get community subscribers')
+	}
 }

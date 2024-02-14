@@ -1,17 +1,14 @@
 <script lang="ts">
 	import CommunityCard from '$lib/components/CommunityCard.svelte';
-	import { getAllCommunities, type Community, getCommunitySubscribers } from '$lib/nostr';
-	import { Relay } from 'nostr-tools';
+	import { getAllCommunities, type Community } from '$lib/nostr';
 	let communities: Community[] = [];
 
-	Relay.connect('wss://nos.lol').then(async (relay) => {
-		getAllCommunities(relay, (community) => {
-			communities = [...communities, community].sort((a, b) => {
-				if (a.subscribers === undefined && b.subscribers === undefined) return 0;
-				else if (a.subscribers === undefined) return 1;
-				else if (b.subscribers === undefined) return -1;
-				else return b.subscribers - a.subscribers;
-			});
+	getAllCommunities((community) => {
+		communities = [...communities, community].sort((a, b) => {
+			if (a.subscribers === undefined && b.subscribers === undefined) return 0;
+			else if (a.subscribers === undefined) return 1;
+			else if (b.subscribers === undefined) return -1;
+			else return b.subscribers - a.subscribers;
 		});
 	});
 </script>
