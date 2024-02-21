@@ -1,13 +1,13 @@
 <script lang="ts">
-	import Avatar from '$lib/components/Avatar.svelte';
 	import type { Community } from '$lib/nostr';
+	import { Avatar } from '@skeletonlabs/skeleton';
 
 	export let community: Community;
 </script>
 
 <div class="card flex w-full p-2 space-x-2 items-start">
 	<div>
-		<Avatar src={community.image} placeholder={community.name} />
+		<Avatar width="w-10" class="items-stretch" src={community.image} placeholder={community.name} />
 	</div>
 	<div class="justify-center w-full">
 		<a href={`/c/${community.id}`} class="h3">{community.name}</a>

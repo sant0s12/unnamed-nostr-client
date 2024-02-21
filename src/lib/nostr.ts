@@ -1,6 +1,6 @@
-import { Relay, kinds } from "nostr-tools";
+import { kinds } from "nostr-tools";
 import { relayPool, relays } from "$lib/stores";
-import type { Event, SubCloser, Subscription } from "nostr-tools";
+import type { Event, SubCloser } from "nostr-tools";
 import { get } from "svelte/store";
 
 export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser {
@@ -8,7 +8,6 @@ export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser 
 		return relayPool.subscribeManyEose(get(relays), [
 			{
 				kinds: [kinds.CommunityDefinition],
-				limit: 20,
 			}
 		]
 			, {
@@ -19,7 +18,7 @@ export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser 
 				},
 			})
 	} catch (e) {
-		throw new Error('Failed to get communities')
+		throw new Error('Failed to get communities: ' + e)
 	}
 }
 
