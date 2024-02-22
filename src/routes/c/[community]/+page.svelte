@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { relays, relayPool } from '$lib/stores';
 	import { page } from '$app/stores';
-	import { getCommunitySubscribers, parseCommunityDefinition } from '$lib/nostr';
+	import { getCommunitySubscribers, parseCommunityDefinition } from '$lib/nostr.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { Avatar } from '@skeletonlabs/skeleton';
 	import Post from '$lib/components/Post.svelte';
@@ -10,8 +10,6 @@
 	let communityPromise = relayPool
 		.get($relays, { ids: [$page.params.community] })
 		.then((event) => (event ? parseCommunityDefinition(event) : Promise.reject('Event not found')));
-
-	let subscribersPromise = communityPromise.then((community) => getCommunitySubscribers(community));
 
 	type Post = {
 		id: string;
@@ -59,9 +57,6 @@
 		</div>
 		<div class="flex flex-col h-full w-full">
 			<h2 class="h2">{community.name}</h2>
-			{#await subscribersPromise then subscribers}
-				<p>{subscribers} subscribers</p>
-			{/await}
 		</div>
 	</div>
 

@@ -1,8 +1,19 @@
 <script lang="ts">
-	import type { Community } from '$lib/nostr';
+	import { getCommunitySubscribers, type Community } from '$lib/nostr.svelte';
 	import { Avatar } from '@skeletonlabs/skeleton';
+	import { onMount } from 'svelte';
 
-	export let community: Community;
+	type Props = {
+		community: Community;
+	};
+
+	let { community } = $props<Props>();
+
+	onMount(() => {
+		getCommunitySubscribers(community, (subscribers) => {
+			community.subscribers = subscribers;
+		});
+	});
 </script>
 
 <div class="card flex w-full p-2 space-x-2 items-start">
@@ -11,7 +22,11 @@
 	</div>
 	<div class="justify-center w-full">
 		<a href={`/c/${community.id}`} class="h3">{community.name}</a>
-		<p>{community.subscribers} subscribers</p>
-		<p class="italic">{community.description}</p>
+		{#if community.subscribers !== undefined}
+			<p>{community.subscribers} subscribers</p>
+		{/if}
+		{#if community.description}
+			<p class="italic">{community.description}</p>
+		{/if}
 	</div>
 </div>

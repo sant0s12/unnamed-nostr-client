@@ -11,9 +11,8 @@ export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser 
 			}
 		]
 			, {
-				async onevent(event) {
+				onevent(event) {
 					let community = parseCommunityDefinition(event);
-					community.subscribers = await getCommunitySubscribers(community);
 					onEvent(community);
 				},
 			})
@@ -79,14 +78,13 @@ export function parseCommunityDefinition(event: Event): Community {
 	return community;
 }
 
-export async function getCommunitySubscribers(community: Community) {
+export function getCommunitySubscribers(community: Community, callback: (numSubscribers: number) => void) {
 	try {
-		let events = await relayPool.querySync(get(relays),
+		relayPool.querySync(get(relays),
 			{
 				kinds: [kinds.CommunitiesList],
 				"#a": [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
-			});
-		return (new Set(events)).size;;
+			}).then((events) => callback(new Set(events).size));
 	} catch (e) {
 		throw new Error('Failed to get community subscribers')
 	}
