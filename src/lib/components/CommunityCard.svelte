@@ -1,13 +1,9 @@
 <script lang="ts">
-	import { getCommunitySubscribers, type Community } from '$lib/nostr.svelte';
+	import { getCommunitySubscribers, type Community } from '$lib/nostr';
 	import { Avatar } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
 
-	type Props = {
-		community: Community;
-	};
-
-	let { community } = $props<Props>();
+	export let community: Community;
 
 	onMount(() => {
 		getCommunitySubscribers(community, (subscribers) => {

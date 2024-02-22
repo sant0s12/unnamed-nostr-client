@@ -1,24 +1,24 @@
 <script lang="ts">
 	import CommunityCard from '$lib/components/CommunityCard.svelte';
-	import { getAllCommunities, type Community } from '$lib/nostr.svelte';
+	import { getAllCommunities, type Community } from '$lib/nostr';
 	import { onMount } from 'svelte';
 
-	let communities: Community[] = $state([]);
+	let communities: Community[] = [];
 
 	onMount(() => {
 		getAllCommunities((community) => {
-			communities.push(community);
+			communities = [...communities, community];
 		});
 	});
 
-	$effect(() => {
-		communities.sort((a, b) => {
+	$: {
+		communities = communities.sort((a, b) => {
 			if (a.subscribers === undefined && b.subscribers === undefined) return 0;
 			else if (a.subscribers === undefined) return 1;
 			else if (b.subscribers === undefined) return -1;
 			else return b.subscribers - a.subscribers;
 		});
-	});
+	}
 </script>
 
 <ul class="list">

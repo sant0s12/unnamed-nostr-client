@@ -1,7 +1,8 @@
 import { kinds } from "nostr-tools";
-import { relayPool, relays } from "$lib/stores";
+import { relayPool, relays } from "$lib/relays";
 import type { Event, SubCloser } from "nostr-tools";
 import { get } from "svelte/store";
+import pLimit from "p-limit";
 
 export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser {
 	try {
@@ -78,13 +79,15 @@ export function parseCommunityDefinition(event: Event): Community {
 	return community;
 }
 
+const getSubsLimit = pLimit(10);
+
 export function getCommunitySubscribers(community: Community, callback: (numSubscribers: number) => void) {
 	try {
-		relayPool.querySync(get(relays),
+		getSubsLimit(() => relayPool.querySync(get(relays),
 			{
 				kinds: [kinds.CommunitiesList],
 				"#a": [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
-			}).then((events) => callback(new Set(events).size));
+			})).then((events) => callback(new Set(events).size)).then(() => console.log(getSubsLimit.activeCount));
 	} catch (e) {
 		throw new Error('Failed to get community subscribers')
 	}

@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { relays, relayPool } from '$lib/stores';
+	import { relays, relayPool } from '$lib/relays';
 	import { page } from '$app/stores';
-	import { getCommunitySubscribers, parseCommunityDefinition } from '$lib/nostr.svelte';
+	import { parseCommunityDefinition } from '$lib/nostr';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { Avatar } from '@skeletonlabs/skeleton';
 	import Post from '$lib/components/Post.svelte';
 	import { kinds } from 'nostr-tools';
+	import { get } from 'svelte/store';
 
 	let communityPromise = relayPool
-		.get($relays, { ids: [$page.params.community] })
+		.get(get(relays), { ids: [$page.params.community] })
 		.then((event) => (event ? parseCommunityDefinition(event) : Promise.reject('Event not found')));
 
 	type Post = {
@@ -21,7 +22,7 @@
 	let posts: Post[] = [];
 	let postsPromise = communityPromise.then((community) => {
 		relayPool.subscribeManyEose(
-			$relays,
+			get(relays),
 			[
 				{
 					kinds: [kinds.ShortTextNote],
