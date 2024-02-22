@@ -2,13 +2,41 @@ import { kinds } from "nostr-tools";
 import { relayPool, relays } from "$lib/relays";
 import type { Event, SubCloser } from "nostr-tools";
 import { get } from "svelte/store";
-import pLimit from "p-limit";
+
+export type Community = {
+	id: string;
+	author: string;
+	name: string;
+	description: string;
+	image: string;
+	moderators: string[];
+	relays: string[];
+	subscribers?: number;
+};
+
+export async function getTopCommunities(since: Date) {
+	let communities: Map<string, number> = new Map();
+
+	let lists = await relayPool.querySync(get(relays),
+		{ kinds: [kinds.CommunitiesList], since: since.getUTCSeconds() });
+
+	lists.forEach((list: Event) => {
+		list.tags.forEach((tag) => {
+			if (tag[0] === 'a' && tag[1].startsWith(kinds.CommunityDefinition.toString())) {
+				communities.set(tag[1], (communities.get(tag[1]) || 0) + 1);
+			}
+		});
+	});
+
+	return [...communities.entries()].sort((a, b) => b[1] - a[1]);
+}
 
 export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser {
 	try {
 		return relayPool.subscribeManyEose(get(relays), [
 			{
 				kinds: [kinds.CommunityDefinition],
+				limit: 10,
 			}
 		]
 			, {
@@ -22,16 +50,20 @@ export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser 
 	}
 }
 
-export type Community = {
-	id: string;
-	author: string;
-	name: string;
-	description: string;
-	image: string;
-	moderators: string[];
-	relays: string[];
-	subscribers?: number;
-};
+export async function getCommunityDefinition(author: string, name: string): Promise<Community | null> {
+	let events = await relayPool.querySync(get(relays),
+		{
+			kinds: [kinds.CommunityDefinition],
+			authors: [author],
+			"#d": [name]
+		});
+
+	if (events.length === 0) {
+		return null;
+	}
+
+	return parseCommunityDefinition(events[0]);
+}
 
 export function parseCommunityDefinition(event: Event): Community {
 	if (event.kind !== kinds.CommunityDefinition) {
@@ -79,15 +111,13 @@ export function parseCommunityDefinition(event: Event): Community {
 	return community;
 }
 
-const getSubsLimit = pLimit(10);
-
 export function getCommunitySubscribers(community: Community, callback: (numSubscribers: number) => void) {
 	try {
-		getSubsLimit(() => relayPool.querySync(get(relays),
+		relayPool.querySync(get(relays),
 			{
 				kinds: [kinds.CommunitiesList],
 				"#a": [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
-			})).then((events) => callback(new Set(events).size)).then(() => console.log(getSubsLimit.activeCount));
+			}).then((events) => callback(new Set(events).size))
 	} catch (e) {
 		throw new Error('Failed to get community subscribers')
 	}

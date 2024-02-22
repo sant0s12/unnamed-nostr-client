@@ -1,13 +1,21 @@
 <script lang="ts">
 	import CommunityCard from '$lib/components/CommunityCard.svelte';
-	import { getAllCommunities, type Community } from '$lib/nostr';
+	import { type Community, getTopCommunities, getCommunityDefinition } from '$lib/nostr';
 	import { onMount } from 'svelte';
 
 	let communities: Community[] = [];
 
-	onMount(() => {
-		getAllCommunities((community) => {
-			communities = [...communities, community];
+	onMount(async () => {
+		let topCommunities = await getTopCommunities(new Date(0));
+		topCommunities.slice(0, 100).forEach(async (community) => {
+			let author = community[0].split(':')[1];
+			let name = community[0].split(':')[2];
+
+			let cDef = await getCommunityDefinition(author, name);
+			if (cDef) {
+				cDef.subscribers = community[1];
+				communities = [...communities, cDef];
+			}
 		});
 	});
 
@@ -22,9 +30,9 @@
 </script>
 
 <ul class="list">
-	{#each communities as community, i (community.id)}
+	{#each communities as community (community.id)}
 		<li>
-			<CommunityCard bind:community={communities[i]} />
+			<CommunityCard bind:community={community} />
 		</li>
 	{/each}
 </ul>

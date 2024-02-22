@@ -1,15 +1,8 @@
 <script lang="ts">
-	import { getCommunitySubscribers, type Community } from '$lib/nostr';
+	import { type Community } from '$lib/nostr';
 	import { Avatar } from '@skeletonlabs/skeleton';
-	import { onMount } from 'svelte';
 
 	export let community: Community;
-
-	onMount(() => {
-		getCommunitySubscribers(community, (subscribers) => {
-			community.subscribers = subscribers;
-		});
-	});
 </script>
 
 <div class="card flex w-full p-2 space-x-2 items-start">
