@@ -12,13 +12,14 @@ export type Community = {
 	moderators: string[];
 	relays: string[];
 	subscribers?: number;
+	createdAt?: number;
 };
 
 export async function getTopCommunities(since: Date) {
 	let communities: Map<string, number> = new Map();
 
 	let lists = await relayPool.querySync(get(relays),
-		{ kinds: [kinds.CommunitiesList], since: since.getUTCSeconds() });
+		{ kinds: [kinds.CommunitiesList], since: since.getTime() / 1000, limit: 100 });
 
 	lists.forEach((list: Event) => {
 		list.tags.forEach((tag) => {
@@ -31,26 +32,13 @@ export async function getTopCommunities(since: Date) {
 	return [...communities.entries()].sort((a, b) => b[1] - a[1]);
 }
 
-export function getAllCommunities(onEvent: (evt: Community) => void): SubCloser {
-	try {
-		return relayPool.subscribeManyEose(get(relays), [
-			{
-				kinds: [kinds.CommunityDefinition],
-				limit: 10,
-			}
-		]
-			, {
-				onevent(event) {
-					let community = parseCommunityDefinition(event);
-					onEvent(community);
-				},
-			})
-	} catch (e) {
-		throw new Error('Failed to get communities: ' + e)
-	}
+export async function getNewCommunities(limit: number) {
+	return await relayPool.querySync(get(relays),
+		{ kinds: [kinds.CommunityDefinition], limit: limit })
+		.then((events) => events.map(parseCommunityDefinition));
 }
 
-export async function getCommunityDefinition(author: string, name: string): Promise<Community | null> {
+export async function getCommunity(author: string, name: string): Promise<Community | null> {
 	let events = await relayPool.querySync(get(relays),
 		{
 			kinds: [kinds.CommunityDefinition],
@@ -77,6 +65,7 @@ export function parseCommunityDefinition(event: Event): Community {
 	let image = '';
 	let moderators: string[] = [];
 	let relays: string[] = [];
+	let createdAt = event.created_at;
 
 	for (const tag of event.tags) {
 		switch (tag[0]) {
@@ -106,6 +95,7 @@ export function parseCommunityDefinition(event: Event): Community {
 		image,
 		moderators,
 		relays,
+		createdAt
 	};
 
 	return community;

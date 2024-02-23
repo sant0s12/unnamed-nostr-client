@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { AppBar, AppShell, Avatar, LightSwitch } from '@skeletonlabs/skeleton';
+	import { AppBar, AppShell, Avatar, LightSwitch, storePopup } from '@skeletonlabs/skeleton';
+	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
 	import '../app.css';
+
+	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 </script>
 
 <AppShell

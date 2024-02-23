@@ -1,38 +1,75 @@
 <script lang="ts">
 	import CommunityCard from '$lib/components/CommunityCard.svelte';
-	import { type Community, getTopCommunities, getCommunityDefinition } from '$lib/nostr';
+	import Spinner from '$lib/components/Spinner.svelte';
+	import { type Community, getTopCommunities, getCommunity, getNewCommunities } from '$lib/nostr';
 	import { onMount } from 'svelte';
 
-	let communities: Community[] = [];
-
-	onMount(async () => {
-		let topCommunities = await getTopCommunities(new Date(0));
-		topCommunities.slice(0, 100).forEach(async (community) => {
-			let author = community[0].split(':')[1];
-			let name = community[0].split(':')[2];
-
-			let cDef = await getCommunityDefinition(author, name);
-			if (cDef) {
-				cDef.subscribers = community[1];
-				communities = [...communities, cDef];
-			}
-		});
-	});
-
-	$: {
-		communities = communities.sort((a, b) => {
-			if (a.subscribers === undefined && b.subscribers === undefined) return 0;
-			else if (a.subscribers === undefined) return 1;
-			else if (b.subscribers === undefined) return -1;
-			else return b.subscribers - a.subscribers;
-		});
+	enum SortOptions {
+		Top = 'Top',
+		New = 'New'
 	}
+
+	let sortOptions = [SortOptions.Top, SortOptions.New];
+	let sortBy: SortOptions = SortOptions.Top;
+
+	let communities: Community[] = [];
+	let loading = false;
+
+	async function getCommunities() {
+		console.log('getting communities');
+
+		loading = true;
+		communities = [];
+
+		if (sortBy === SortOptions.Top) {
+			let date = new Date(0);
+			let topCommunities = await getTopCommunities(date);
+
+			topCommunities.forEach(async (community) => {
+				let author = community[0].split(':')[1];
+				let name = community[0].split(':')[2];
+
+				let cDef = await getCommunity(author, name);
+				if (cDef) {
+					cDef.subscribers = community[1];
+					communities = [...communities, cDef];
+				}
+			});
+		} else {
+			communities = await getNewCommunities(100);
+		}
+
+		loading = false;
+	}
+
+	onMount(getCommunities);
 </script>
 
-<ul class="list">
-	{#each communities as community (community.id)}
-		<li>
-			<CommunityCard bind:community={community} />
-		</li>
-	{/each}
-</ul>
+<div class="flex flex-col space-y-4">
+	<div>
+		<h2 class="h2">Communities</h2>
+		<div class="flex flex-col w-20">
+			<p class="p">Sort by</p>
+			<select
+				class="btn btn-sm variant-filled w-min"
+				bind:value={sortBy}
+				disabled={loading}
+				on:change={getCommunities}
+			>
+				{#each sortOptions as option}
+					<option value={option}>{option}</option>
+				{/each}
+			</select>
+		</div>
+	</div>
+	<ul class="list">
+		{#each communities as community (community.id)}
+			<li>
+				<CommunityCard bind:community />
+			</li>
+		{/each}
+	</ul>
+	{#if loading}
+		<Spinner />
+	{/if}
+</div>

@@ -35,6 +35,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@floating-ui/dom": "^1.6.3",
     "nostr-tools": "^2.1.7",
     "p-limit": "^5.0.0"
   }
