@@ -15,11 +15,11 @@ export type Community = {
 	createdAt?: number;
 };
 
-export async function getTopCommunities(since: Date) {
+export async function getTopCommunities(since: Date, limit?: number) {
 	let communities: Map<string, number> = new Map();
 
 	let lists = await relayPool.querySync(get(relays),
-		{ kinds: [kinds.CommunitiesList], since: since.getTime() / 1000, limit: 100 });
+		{ kinds: [kinds.CommunitiesList], since: since.getTime() / 1000, limit: limit });
 
 	lists.forEach((list: Event) => {
 		list.tags.forEach((tag) => {
@@ -33,9 +33,9 @@ export async function getTopCommunities(since: Date) {
 }
 
 export async function getNewCommunities(limit: number) {
-	return await relayPool.querySync(get(relays),
-		{ kinds: [kinds.CommunityDefinition], limit: limit })
-		.then((events) => events.map(parseCommunityDefinition));
+	let events = await relayPool.querySync(get(relays),
+		{ kinds: [kinds.CommunityDefinition], limit: limit });
+	return events.map(parseCommunityDefinition);
 }
 
 export async function getCommunity(author: string, name: string): Promise<Community | null> {
