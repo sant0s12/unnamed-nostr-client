@@ -1,11 +1,10 @@
 <script lang="ts">
 	import CommunityCard from '$lib/components/CommunityCard.svelte';
-	import Spinner from '$lib/components/Spinner.svelte';
 	import InfiniteLoading, { type InfiniteEvent } from 'svelte-infinite-loading';
 	import { type Community, getTopCommunities, getCommunity, getNewCommunities } from '$lib/nostr';
 	import pLimit from 'p-limit';
-	import { ProgressRadial } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
+	import { Heading, Select, Spinner } from 'flowbite-svelte';
 
 	enum SortOptions {
 		Top = 'Top',
@@ -20,8 +19,6 @@
 	let loading = false;
 
 	async function getCommunities() {
-		console.log('getting communities');
-
 		loading = true;
 		communities = [];
 		shownCommunities = [];
@@ -63,13 +60,14 @@
 	onMount(getCommunities);
 </script>
 
-<div class="flex flex-col space-y-4">
+<div class="flex flex-col space-y-4 py-2">
 	<div>
-		<h2 class="h2">Communities</h2>
+		<Heading tag="h2">Communities</Heading>
 		<div class="flex flex-col w-20">
-			<p class="p">Sort by</p>
-			<select
-				class="btn btn-sm variant-filled w-min"
+			<p class="dark:text-white">Sort by</p>
+			<Select
+				placeholder=""
+				size="sm"
 				bind:value={sortBy}
 				disabled={loading}
 				on:change={getCommunities}
@@ -77,7 +75,7 @@
 				{#each sortOptions as option}
 					<option value={option}>{option}</option>
 				{/each}
-			</select>
+			</Select>
 		</div>
 	</div>
 	<ul class="list">
@@ -94,6 +92,6 @@
 			<div slot="noResults" />
 		</InfiniteLoading>
 	{:else}
-		<Spinner />
+		<Spinner class="w-full" />
 	{/if}
 </div>
