@@ -1,5 +1,5 @@
-import { browser } from "$app/environment";
-import type { EventTemplate, VerifiedEvent } from "nostr-tools";
+import { browser } from '$app/environment';
+import type { EventTemplate, VerifiedEvent } from 'nostr-tools';
 
 declare global {
 	interface Window {

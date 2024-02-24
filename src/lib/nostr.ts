@@ -1,7 +1,7 @@
-import { kinds } from "nostr-tools";
-import { relayPool, relays } from "$lib/relays";
-import type { Event, SubCloser } from "nostr-tools";
-import { get } from "svelte/store";
+import { kinds } from 'nostr-tools';
+import { relayPool, relays } from '$lib/relays';
+import type { Event, SubCloser } from 'nostr-tools';
+import { get } from 'svelte/store';
 
 export type Community = {
 	id: string;
@@ -18,8 +18,11 @@ export type Community = {
 export async function getTopCommunities(since: Date, limit?: number) {
 	let communities: Map<string, number> = new Map();
 
-	let lists = await relayPool.querySync(get(relays),
-		{ kinds: [kinds.CommunitiesList], since: since.getTime() / 1000, limit: limit });
+	let lists = await relayPool.querySync(get(relays), {
+		kinds: [kinds.CommunitiesList],
+		since: since.getTime() / 1000,
+		limit: limit
+	});
 
 	lists.forEach((list: Event) => {
 		list.tags.forEach((tag) => {
@@ -33,18 +36,19 @@ export async function getTopCommunities(since: Date, limit?: number) {
 }
 
 export async function getNewCommunities(limit: number) {
-	let events = await relayPool.querySync(get(relays),
-		{ kinds: [kinds.CommunityDefinition], limit: limit });
+	let events = await relayPool.querySync(get(relays), {
+		kinds: [kinds.CommunityDefinition],
+		limit: limit
+	});
 	return events.map(parseCommunityDefinition);
 }
 
 export async function getCommunity(author: string, name: string): Promise<Community | null> {
-	let events = await relayPool.querySync(get(relays),
-		{
-			kinds: [kinds.CommunityDefinition],
-			authors: [author],
-			"#d": [name]
-		});
+	let events = await relayPool.querySync(get(relays), {
+		kinds: [kinds.CommunityDefinition],
+		authors: [author],
+		'#d': [name]
+	});
 
 	if (events.length === 0) {
 		return null;
@@ -101,14 +105,18 @@ export function parseCommunityDefinition(event: Event): Community {
 	return community;
 }
 
-export function getCommunitySubscribers(community: Community, callback: (numSubscribers: number) => void) {
+export function getCommunitySubscribers(
+	community: Community,
+	callback: (numSubscribers: number) => void
+) {
 	try {
-		relayPool.querySync(get(relays),
-			{
+		relayPool
+			.querySync(get(relays), {
 				kinds: [kinds.CommunitiesList],
-				"#a": [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
-			}).then((events) => callback(new Set(events).size))
+				'#a': [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
+			})
+			.then((events) => callback(new Set(events).size));
 	} catch (e) {
-		throw new Error('Failed to get community subscribers')
+		throw new Error('Failed to get community subscribers');
 	}
 }
