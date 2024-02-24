@@ -23,8 +23,8 @@
 	</Navbar>
 </header>
 
-<div class="flex px-4 mx-auto w-full">
-	<main class="lg:ml-72 w-full mx-auto">
+<div class="flex items-center px-4 py-4 mx-auto w-full">
+	<main class="w-4/5 mx-auto">
 		<slot />
 	</main>
 </div>

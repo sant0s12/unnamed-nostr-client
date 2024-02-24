@@ -1,4 +1,9 @@
 <script lang="ts">
+	import { Heading } from "flowbite-svelte";
+
 </script>
 
-<p>Page content goes here</p>
+<Heading tag="h2">
+	Home
+</Heading>
+

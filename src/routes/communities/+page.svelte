@@ -60,7 +60,7 @@
 	onMount(getCommunities);
 </script>
 
-<div class="flex flex-col space-y-4 py-2">
+<div class="flex flex-col space-y-4">
 	<div>
 		<Heading tag="h2">Communities</Heading>
 		<div class="flex flex-col w-20">
@@ -68,6 +68,7 @@
 			<Select
 				placeholder=""
 				size="sm"
+				class="py-1"
 				bind:value={sortBy}
 				disabled={loading}
 				on:change={getCommunities}
@@ -78,7 +79,7 @@
 			</Select>
 		</div>
 	</div>
-	<ul class="list">
+	<ul class="divide-y divide-zinc-200 dark:divide-zinc-800">
 		{#each shownCommunities as community}
 			<li>
 				<CommunityCard {community} />

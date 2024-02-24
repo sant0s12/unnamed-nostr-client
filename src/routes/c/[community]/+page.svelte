@@ -2,11 +2,10 @@
 	import { relays, relayPool } from '$lib/relays';
 	import { page } from '$app/stores';
 	import { parseCommunityDefinition } from '$lib/nostr';
-	import Spinner from '$lib/components/Spinner.svelte';
 	import Post from '$lib/components/Post.svelte';
 	import { kinds } from 'nostr-tools';
 	import { get } from 'svelte/store';
-	import { Avatar } from 'flowbite-svelte';
+	import { Avatar, Heading, Spinner } from 'flowbite-svelte';
 
 	let communityPromise = relayPool
 		.get(get(relays), { ids: [$page.params.community] })
@@ -52,16 +51,16 @@
 {#await communityPromise}
 	<Spinner />
 {:then community}
-	<div class="bg-surface-500 p-5 w-full rounded-md h-30 flex flex-row space-x-3 items-center">
+	<div class="p-5 w-full rounded-md h-30 flex flex-row space-x-3 items-center dark:text-white">
 		<div>
 			<Avatar class="items-stretch" src={community.image} />
 		</div>
 		<div class="flex flex-col h-full w-full">
-			<h2 class="h2">{community.name}</h2>
+			<Heading tag="h3">{community.name}</Heading>
 		</div>
 	</div>
 
-	<ul class="flex flex-col divide-y divide-surface-500">
+	<ul class="flex flex-col space-y-3">
 		{#await postsPromise}
 			<p>Posts</p>
 		{/await}
