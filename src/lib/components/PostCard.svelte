@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { BadgeCheckSolid } from 'flowbite-svelte-icons';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import PostInteraction from '$lib/components/PostInteraction.svelte';
 
 	export let post: Post;
 	export let showCommunity: boolean = false;
@@ -21,7 +22,11 @@
 
 <Card size="xl" class="space-y-2" href={`/post/${id}`}>
 	<div class="flex flex-row w-auto space-x-2 items-center">
-		<Avatar src={author.picture} fallback={author.name} size="xs" />
+		<Avatar
+			src={showCommunity ? community?.image : author.picture}
+			fallback={author.name}
+			size={showCommunity ? 'sm' : 'xs'}
+		/>
 		<div class="flex flex-col text-xs justify-center items-start">
 			{#if showCommunity && community?.name}
 				<p class="font-bold">{community.name}</p>
@@ -34,6 +39,9 @@
 				{/if}
 				{#if author.verified}
 					<BadgeCheckSolid size="xs" />
+					<div>
+						{author.nip05}
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -46,7 +54,5 @@
 	<div class="flex flex-row w-auto">
 		<p class="break-all hyphens-auto">{content}</p>
 	</div>
-	<div class="flex flex-row w-auto">
-		<p>Bottom bar</p>
-	</div>
+	<PostInteraction {post} />
 </Card>

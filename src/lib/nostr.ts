@@ -175,3 +175,19 @@ export async function parseUserMetadata(event: Event) {
 
 	return user;
 }
+
+export async function getPostReactions(post: Post) {
+	let events = await relayPool.querySync(get(relays), {
+		kinds: [kinds.Reaction],
+		'#e': [post.id],
+		'#p': [post.author.pubkey]
+	});
+
+	let reactions: Map<string, number> = new Map();
+
+	events.forEach((event) => {
+		reactions.set(event.content, (reactions.get(event.content) || 0) + 1);
+	});
+
+	return reactions;
+}
