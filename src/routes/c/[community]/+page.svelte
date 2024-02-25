@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { relays, relayPool } from '$lib/relays';
 	import { page } from '$app/stores';
-	import { parseCommunityDefinition } from '$lib/nostr';
-	import Post from '$lib/components/Post.svelte';
+	import { parseCommunityDefinition, type Post } from '$lib/nostr';
+	import PostCard from '$lib/components/PostCard.svelte';
 	import { kinds } from 'nostr-tools';
 	import { get } from 'svelte/store';
 	import { Avatar, Heading, Spinner } from 'flowbite-svelte';
@@ -11,13 +11,6 @@
 		.get(get(relays), { ids: [$page.params.community] })
 		.then((event) => (event ? parseCommunityDefinition(event) : Promise.reject('Event not found')));
 
-	type Post = {
-		id: string;
-		title: string;
-		content: string;
-		media?: string;
-	};
-
 	let posts: Post[] = [];
 	let postsPromise = communityPromise.then((community) => {
 		relayPool.subscribeManyEose(
@@ -25,20 +18,23 @@
 			[
 				{
 					kinds: [kinds.ShortTextNote],
-					'#a': [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
+					'#a': [`${kinds.CommunityDefinition}:${community.author.pubkey}:${community.name}`]
 				}
 			],
 			{
 				onevent(event) {
 					if (event) {
 						let titleTag = event.tags.find((tag) => tag[0] === 'subject');
-						let title = titleTag ? titleTag[1] : 'No title';
+						let title = titleTag ? titleTag[1] : undefined;
 						posts = [
 							...posts,
 							{
 								id: event.id,
+								author: { pubkey: event.pubkey },
 								title: title,
-								content: event.content
+								content: event.content,
+								community: community,
+								createdAt: event.created_at
 							}
 						];
 					}
@@ -60,13 +56,13 @@
 		</div>
 	</div>
 
-	<ul class="flex flex-col space-y-3">
+	<ul class="flex flex-col space-y-3 items-stretch">
 		{#await postsPromise}
 			<p>Posts</p>
 		{/await}
 		{#each posts as post}
 			<li>
-				<Post title={post.title} content={post.content} />
+				<PostCard {post} />
 			</li>
 		{/each}
 	</ul>

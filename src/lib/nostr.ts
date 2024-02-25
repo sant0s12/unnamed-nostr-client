@@ -1,11 +1,12 @@
 import { kinds } from 'nostr-tools';
 import { relayPool, relays } from '$lib/relays';
-import type { Event, SubCloser } from 'nostr-tools';
+import type { Event } from 'nostr-tools';
 import { get } from 'svelte/store';
+import { isValid } from 'nostr-tools/nip05';
 
 export type Community = {
 	id: string;
-	author: string;
+	author: User;
 	name: string;
 	description: string;
 	image: string;
@@ -13,6 +14,25 @@ export type Community = {
 	relays: string[];
 	subscribers?: number;
 	createdAt?: number;
+};
+
+export type Post = {
+	id: string;
+	author: User;
+	community?: Community;
+	title?: string;
+	content: string;
+	media?: string;
+	createdAt: number;
+};
+
+export type User = {
+	pubkey: string;
+	name?: string;
+	nip05?: string;
+	verified?: boolean;
+	about?: string;
+	picture?: string;
 };
 
 export async function getTopCommunities(since: Date, limit?: number) {
@@ -43,10 +63,10 @@ export async function getNewCommunities(limit: number) {
 	return events.map(parseCommunityDefinition);
 }
 
-export async function getCommunity(author: string, name: string): Promise<Community | null> {
+export async function getCommunity(author: User, name: string): Promise<Community | null> {
 	let events = await relayPool.querySync(get(relays), {
 		kinds: [kinds.CommunityDefinition],
-		authors: [author],
+		authors: [author.pubkey],
 		'#d': [name]
 	});
 
@@ -93,7 +113,7 @@ export function parseCommunityDefinition(event: Event): Community {
 
 	const community: Community = {
 		id,
-		author,
+		author: { pubkey: author },
 		name: name,
 		description,
 		image,
@@ -119,4 +139,39 @@ export function getCommunitySubscribers(
 	} catch (e) {
 		throw new Error('Failed to get community subscribers');
 	}
+}
+
+export async function getUserMetadata(user: User) {
+	let event = await relayPool.get(get(relays), {
+		kinds: [kinds.Metadata],
+		authors: [user.pubkey]
+	});
+
+	if (!event) {
+		return user;
+	}
+
+	return parseUserMetadata(event);
+}
+
+export async function parseUserMetadata(event: Event) {
+	if (event.kind !== kinds.Metadata) {
+		throw new Error('Invalid event kind');
+	}
+
+	let user: User = {
+		pubkey: event.pubkey
+	};
+
+	let content = JSON.parse(event.content);
+	user.name = content.name;
+	user.nip05 = content.nip05;
+	user.about = content.about;
+	user.picture = content.picture;
+
+	if (user.nip05) {
+		user.verified = await isValid(event.pubkey, user.nip05);
+	}
+
+	return user;
 }

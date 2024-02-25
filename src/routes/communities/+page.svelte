@@ -30,7 +30,7 @@
 			let limit = pLimit(5);
 
 			topCommunities.map((community) => {
-				let author = community[0].split(':')[1];
+				let author = { pubkey: community[0].split(':')[1] };
 				let name = community[0].split(':')[2];
 
 				communities = [...communities, limit(() => getCommunity(author, name))];

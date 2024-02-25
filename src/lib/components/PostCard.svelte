@@ -1,0 +1,51 @@
+<script lang="ts">
+	import { getUserMetadata, type Post } from '$lib/nostr';
+	import { Avatar, Card, Heading } from 'flowbite-svelte';
+	import { npubEncode } from 'nostr-tools/nip19';
+	import { onMount } from 'svelte';
+	import { BadgeCheckSolid } from 'flowbite-svelte-icons';
+
+	export let post: Post;
+	export let showCommunity: boolean = false;
+
+	let { title, author, content, id, community } = post;
+
+	let npub = npubEncode(author.pubkey);
+	let shortNpub = npub.slice(0, 8) + '...' + npub.slice(-8);
+
+	onMount(async () => {
+		author = await getUserMetadata(author);
+	});
+</script>
+
+<Card size="xl" class="space-y-2" href={`/post/${id}`}>
+	<div class="flex flex-row w-auto space-x-2 items-center">
+		<Avatar size="xs" />
+		<div class="flex flex-col text-xs justify-center items-start">
+			{#if showCommunity && community?.name}
+				<p class="font-bold">{community.name}</p>
+			{/if}
+			<div class="inline-flex space-x-1 items-center">
+				{#if author.name}
+					<p>{author.name}</p>
+				{:else}
+					<p>{shortNpub}</p>
+				{/if}
+				{#if author.verified}
+					<BadgeCheckSolid size="xs" />
+				{/if}
+			</div>
+		</div>
+	</div>
+	{#if title}
+		<div class="flex flex-row w-auto">
+			<Heading tag="h4">{title}</Heading>
+		</div>
+	{/if}
+	<div class="flex flex-row w-auto">
+		<p class="break-all hyphens-auto">{content}</p>
+	</div>
+	<div class="flex flex-row w-auto">
+		<p>Bottom bar</p>
+	</div>
+</Card>
