@@ -5,7 +5,8 @@
 	import PostCard from '$lib/components/PostCard.svelte';
 	import { kinds } from 'nostr-tools';
 	import { get } from 'svelte/store';
-	import { Avatar, Heading, Spinner } from 'flowbite-svelte';
+	import { Heading, Spinner } from 'flowbite-svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
 
 	let communityPromise = relayPool
 		.get(get(relays), { ids: [$page.params.community] })
@@ -49,7 +50,7 @@
 {:then community}
 	<div class="p-5 w-full rounded-md h-30 flex flex-row space-x-3 items-center dark:text-white">
 		<div>
-			<Avatar class="items-stretch" src={community.image} />
+			<Avatar src={community.image} />
 		</div>
 		<div class="flex flex-col h-full w-full">
 			<Heading tag="h3">{community.name}</Heading>

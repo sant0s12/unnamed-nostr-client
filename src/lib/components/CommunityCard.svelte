@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { type Community } from '$lib/nostr';
-	import { Avatar } from 'flowbite-svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
 
 	export let community: Community;
 </script>
 
 <div class="flex w-full p-2 space-x-2 items-start">
 	<div>
-		<Avatar class="overflow-hidden" src={community.image}>
+		<Avatar size="sm" src={community.image} fallback={community.name}>
 			{community.name.slice(0, 2).toUpperCase()}
 		</Avatar>
 	</div>
