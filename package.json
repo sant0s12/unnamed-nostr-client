@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "npx vite dev",
-		"build": "vite build",
+		"build": "vite build && cp build/index.html build/404.html",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
