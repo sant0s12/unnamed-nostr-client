@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { type Community } from '$lib/nostr';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import { base } from '$app/paths';
 
 	export let community: Community;
 </script>
@@ -12,7 +13,7 @@
 		</Avatar>
 	</div>
 	<div class="justify-center w-full">
-		<a href={`/c/${community.id}`} class="h3 dark:text-white">{community.name}</a>
+		<a href={`${base}/c/${community.id}`} class="h3 dark:text-white">{community.name}</a>
 		{#if community.subscribers !== undefined}
 			<p>{community.subscribers} subscribers</p>
 		{/if}

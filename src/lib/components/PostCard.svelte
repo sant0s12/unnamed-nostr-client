@@ -6,6 +6,7 @@
 	import { BadgeCheckSolid } from 'flowbite-svelte-icons';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import PostInteraction from '$lib/components/PostInteraction.svelte';
+	import { base } from '$app/paths';
 
 	export let post: Post;
 	export let showCommunity: boolean = false;
@@ -20,7 +21,7 @@
 	});
 </script>
 
-<Card size="xl" class="space-y-2" href={`/post/${id}`}>
+<Card size="xl" class="space-y-2" href={`${base}/post/${id}`}>
 	<div class="flex flex-row w-auto space-x-2 items-center">
 		<Avatar
 			src={showCommunity ? community?.image : author.picture}
