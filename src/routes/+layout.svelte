@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { DarkMode, NavBrand, NavHamburger, NavLi, NavUl, Navbar } from 'flowbite-svelte';
 	import '../app.css';
-
-	export const prerender = true;
 </script>
 
 <header class="sticky top-0 z-20">
