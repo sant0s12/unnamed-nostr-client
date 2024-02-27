@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Avatar } from 'flowbite-svelte';
+	import { twMerge } from 'tailwind-merge';
 
 	export let src: string | undefined = undefined;
 	export let fallback: string | undefined = undefined;
@@ -37,7 +38,11 @@
 </script>
 
 <div
-	class={`flex overflow-clip rounded-full aspect-square items-center justify-center ${sizes[size]}`}
+	class={twMerge(
+		`flex overflow-clip rounded-full aspect-square items-center justify-center
+		${sizes[size]}`,
+		$$props.class
+	)}
 >
 	{#if error || !src}
 		{#if fallback}

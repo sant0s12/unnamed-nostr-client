@@ -20,7 +20,7 @@
 </script>
 
 {#await communityPromise}
-	<Spinner />
+	<Spinner class="w-full mt-5" />
 {:then community}
 	<div class="p-5 w-full rounded-md h-30 flex flex-row space-x-3 items-center dark:text-white">
 		<div>

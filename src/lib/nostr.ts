@@ -21,12 +21,12 @@ export type Community = {
 export type Post = {
 	id: string;
 	author: User;
-	community?: Community;
+	createdAt: number;
+	communities?: (Community | Promise<Community | null>)[];
 	title?: string;
 	content: string;
 	media?: string;
-	createdAt: number;
-	repost?: Post;
+	repostedBy?: (Post | Promise<Post>)[];
 };
 
 export type User = {
@@ -36,6 +36,7 @@ export type User = {
 	verified?: boolean;
 	about?: string;
 	picture?: string;
+	meta?: Event;
 };
 
 export async function getTopCommunities(since: Date, limit?: number) {
@@ -154,6 +155,8 @@ export async function getUserMetadata(user: User) {
 		return user;
 	}
 
+	user.meta = event;
+
 	return parseUserMetadata(event);
 }
 
@@ -212,34 +215,10 @@ export function getCommunityTopLevelPosts(community: Community, callback: (posts
 					return;
 				}
 
-				let post: Post = {
-					id: event.id,
-					author: { pubkey: event.pubkey },
-					content: '',
-					community: community,
-					createdAt: event.created_at
-				};
-
-				if (event.kind === kinds.Repost) {
-					let repostedEvent = getRepostedEvent(event);
-					if (!repostedEvent) {
-						return;
-					}
-
-					post.content = 'Repost';
-					post.repost = {
-						id: repostedEvent.id,
-						author: { pubkey: repostedEvent.pubkey },
-						content: repostedEvent.content,
-						createdAt: repostedEvent.created_at
-					};
-				} else {
-					let titleTag = event.tags.find((tag) => tag[0] === 'subject');
-					post.title = titleTag ? titleTag[1] : undefined;
-					post.content = event.content;
+				let post = parsePost(event);
+				if (post) {
+					callback(post);
 				}
-
-				callback(post);
 			}
 		}
 	);
@@ -248,4 +227,54 @@ export function getCommunityTopLevelPosts(community: Community, callback: (posts
 export function npubEncodeShort(pubkey: string) {
 	let npub = npubEncode(pubkey);
 	return npub.slice(0, 8) + '...' + npub.slice(-8);
+}
+
+export function getEventCommunities(event: Event) {
+	let communities: Promise<Community | null>[] = [];
+	for (const tag of event.tags) {
+		if (tag[0] === 'a' && tag[1].split(':')[0] === kinds.CommunityDefinition.toString()) {
+			communities.push(getCommunity({ pubkey: tag[1].split(':')[1] }, tag[1].split(':')[2]));
+		}
+	}
+
+	return communities;
+}
+
+export function parsePost(event: Event) {
+	let post: Post = {
+		id: event.id,
+		author: { pubkey: event.pubkey },
+		content: event.content,
+		createdAt: event.created_at
+	};
+
+	post.communities = getEventCommunities(event);
+
+	if (event.kind === kinds.Repost) {
+		let repostedEvent = getRepostedEvent(event);
+		if (!repostedEvent) {
+			return undefined;
+		}
+
+		let repostedPost: Post = {
+			id: repostedEvent.id,
+			author: { pubkey: repostedEvent.pubkey },
+			content: repostedEvent.content,
+			createdAt: repostedEvent.created_at,
+			communities: [
+				...getEventCommunities(repostedEvent),
+				...getEventCommunities(repostedEvent),
+				...post.communities,
+				...post.communities
+			]
+		};
+
+		repostedPost.repostedBy = [post];
+		post = repostedPost;
+	}
+
+	let titleTag = event.tags.find((tag) => tag[0] === 'subject');
+	post.title = titleTag ? titleTag[1] : undefined;
+
+	return post;
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { getPostReactions, type Post } from '$lib/nostr';
 	import { Button, ButtonGroup } from 'flowbite-svelte';
 	import { ChevronDownOutline, ChevronUpOutline, MessageDotsSolid } from 'flowbite-svelte-icons';
@@ -12,7 +13,6 @@
 
 	onMount(async () => {
 		let reactions = await getPostReactions(post);
-		console.log(reactions);
 		upvotes = reactions.get('+') || 0;
 		downvotes = reactions.get('-') || 0;
 	});
@@ -29,7 +29,7 @@
 			{downvotes}
 		</Button>
 	</ButtonGroup>
-	<Button color="alternative" size="xs">
+	<Button href="{base}/post/{post.id}" color="alternative" size="xs">
 		<MessageDotsSolid class="me-1" />
 		{comments}
 	</Button>
