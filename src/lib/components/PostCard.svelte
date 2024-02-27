@@ -21,18 +21,20 @@
 	});
 </script>
 
-<Card size="xl" class="space-y-2" href={`${base}/post/${id}`}>
+<Card size="xl" class="space-y-2">
 	<div class="flex flex-row w-auto space-x-2 items-center">
-		<Avatar
-			src={showCommunity ? community?.image : author.picture}
-			fallback={author.name}
-			size={showCommunity ? 'sm' : 'xs'}
-		/>
+		<a href={showCommunity ? `${base}/c/${community?.id}` : `${base}/p/${author.pubkey}`}>
+			<Avatar
+				src={showCommunity ? community?.image : author.picture}
+				fallback={author.name}
+				size={showCommunity ? 'sm' : 'xs'}
+			/>
+		</a>
 		<div class="flex flex-col text-xs justify-center items-start">
 			{#if showCommunity && community?.name}
-				<p class="font-bold">{community.name}</p>
+				<a href="{base}/c/{community.id}" class="font-bold hover:underline">{community.name}</a>
 			{/if}
-			<div class="inline-flex space-x-1 items-center">
+			<a href="{base}/p/{author.pubkey}" class="inline-flex space-x-1 items-center hover:underline">
 				{#if author.name}
 					<p>{author.name}</p>
 				{:else}
@@ -44,7 +46,7 @@
 						{author.nip05}
 					</div>
 				{/if}
-			</div>
+			</a>
 		</div>
 	</div>
 	{#if title}
@@ -53,7 +55,7 @@
 		</div>
 	{/if}
 	<div class="flex flex-row w-auto">
-		<p class="break-all hyphens-auto">{content}</p>
+		<p class="break-all hyphens-auto line-clamp-5">{content}</p>
 	</div>
 	<PostInteraction {post} />
 </Card>

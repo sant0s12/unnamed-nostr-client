@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { relays, relayPool } from '$lib/relays';
 	import { page } from '$app/stores';
-	import { parseCommunityDefinition, type Post } from '$lib/nostr';
+	import { parseCommunityDefinition, getCommunityTopLevelPosts, type Post } from '$lib/nostr';
 	import PostCard from '$lib/components/PostCard.svelte';
-	import { kinds } from 'nostr-tools';
 	import { get } from 'svelte/store';
 	import { Heading, Spinner } from 'flowbite-svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
@@ -14,34 +13,9 @@
 
 	let posts: Post[] = [];
 	let postsPromise = communityPromise.then((community) => {
-		relayPool.subscribeManyEose(
-			get(relays),
-			[
-				{
-					kinds: [kinds.ShortTextNote],
-					'#a': [`${kinds.CommunityDefinition}:${community.author.pubkey}:${community.name}`]
-				}
-			],
-			{
-				onevent(event) {
-					if (event) {
-						let titleTag = event.tags.find((tag) => tag[0] === 'subject');
-						let title = titleTag ? titleTag[1] : undefined;
-						posts = [
-							...posts,
-							{
-								id: event.id,
-								author: { pubkey: event.pubkey },
-								title: title,
-								content: event.content,
-								community: community,
-								createdAt: event.created_at
-							}
-						];
-					}
-				}
-			}
-		);
+		getCommunityTopLevelPosts(community, (post: Post) => {
+			posts = [...posts, post];
+		});
 	});
 </script>
 
@@ -59,7 +33,7 @@
 
 	<ul class="flex flex-col space-y-3 items-stretch">
 		{#await postsPromise}
-			<p>Posts</p>
+			<Spinner />
 		{/await}
 		{#each posts as post}
 			<li>

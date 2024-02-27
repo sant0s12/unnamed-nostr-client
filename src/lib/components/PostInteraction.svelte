@@ -1,11 +1,7 @@
 <script lang="ts">
 	import { getPostReactions, type Post } from '$lib/nostr';
 	import { Button, ButtonGroup } from 'flowbite-svelte';
-	import {
-		ChevronDownOutline,
-		ChevronUpOutline,
-		MessageDotsSolid
-	} from 'flowbite-svelte-icons';
+	import { ChevronDownOutline, ChevronUpOutline, MessageDotsSolid } from 'flowbite-svelte-icons';
 	import { onMount } from 'svelte';
 
 	export let post: Post;
@@ -24,7 +20,7 @@
 
 <div class="flex flex-row w-full pt-2 space-x-2 items-stretch h-10">
 	<ButtonGroup>
-		<Button size="xs">
+		<Button size="xs" on:click={() => alert('button')}>
 			<ChevronUpOutline />
 			{upvotes}
 		</Button>

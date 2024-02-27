@@ -19,13 +19,15 @@
 		<NavUl>
 			<NavLi href="{base}/">Home</NavLi>
 			<NavLi href="{base}/communities">Communities</NavLi>
+			<NavLi>
+				<DarkMode btnClass="" />
+			</NavLi>
 		</NavUl>
-		<DarkMode />
 	</Navbar>
 </header>
 
-<div class="flex items-center px-4 py-4 mx-auto w-full">
-	<main class="w-4/5 mx-auto">
+<div class="px-4 py-4 flex flex-col items-center">
+	<main class="lg:w-2/5 w-2/3">
 		<slot />
 	</main>
 </div>

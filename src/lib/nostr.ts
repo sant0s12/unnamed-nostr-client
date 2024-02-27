@@ -3,6 +3,7 @@ import { relayPool, relays } from '$lib/relays';
 import type { Event } from 'nostr-tools';
 import { get } from 'svelte/store';
 import { isValid } from 'nostr-tools/nip05';
+import { getRepostedEvent } from 'nostr-tools/nip18';
 
 export type Community = {
 	id: string;
@@ -24,6 +25,7 @@ export type Post = {
 	content: string;
 	media?: string;
 	createdAt: number;
+	repost?: Post;
 };
 
 export type User = {
@@ -190,4 +192,55 @@ export async function getPostReactions(post: Post) {
 	});
 
 	return reactions;
+}
+
+export function getCommunityTopLevelPosts(community: Community, callback: (posts: Post) => void) {
+	relayPool.subscribeManyEose(
+		get(relays),
+		[
+			{
+				kinds: [kinds.ShortTextNote, kinds.LongFormArticle, kinds.Repost],
+				'#a': [`${kinds.CommunityDefinition}:${community.author.pubkey}:${community.name}`]
+			}
+		],
+		{
+			onevent(event) {
+				if (!event) {
+					return;
+				} else if (event.kind !== kinds.Repost && event.tags.some((tag) => tag[0] === 'e')) {
+					return;
+				}
+
+				let post: Post = {
+					id: event.id,
+					author: { pubkey: event.pubkey },
+					content: '',
+					community: community,
+					createdAt: event.created_at
+				};
+
+				if (event.kind === kinds.Repost) {
+					let repostedEvent = getRepostedEvent(event);
+					if (!repostedEvent) {
+						return;
+					}
+
+					post.content = "Repost";
+					post.repost = {
+						id: repostedEvent.id,
+						author: { pubkey: repostedEvent.pubkey },
+						content: repostedEvent.content,
+						createdAt: repostedEvent.created_at
+					};
+
+				} else {
+					let titleTag = event.tags.find((tag) => tag[0] === 'subject');
+					post.title = titleTag ? titleTag[1] : undefined;
+					post.content = event.content;
+				}
+
+				callback(post);
+			}
+		}
+	);
 }
