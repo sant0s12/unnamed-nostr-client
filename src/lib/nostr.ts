@@ -4,6 +4,7 @@ import type { Event } from 'nostr-tools';
 import { get } from 'svelte/store';
 import { isValid } from 'nostr-tools/nip05';
 import { getRepostedEvent } from 'nostr-tools/nip18';
+import { npubEncode } from 'nostr-tools/nip19';
 
 export type Community = {
 	id: string;
@@ -225,14 +226,13 @@ export function getCommunityTopLevelPosts(community: Community, callback: (posts
 						return;
 					}
 
-					post.content = "Repost";
+					post.content = 'Repost';
 					post.repost = {
 						id: repostedEvent.id,
 						author: { pubkey: repostedEvent.pubkey },
 						content: repostedEvent.content,
 						createdAt: repostedEvent.created_at
 					};
-
 				} else {
 					let titleTag = event.tags.find((tag) => tag[0] === 'subject');
 					post.title = titleTag ? titleTag[1] : undefined;
@@ -243,4 +243,9 @@ export function getCommunityTopLevelPosts(community: Community, callback: (posts
 			}
 		}
 	);
+}
+
+export function npubEncodeShort(pubkey: string) {
+	let npub = npubEncode(pubkey);
+	return npub.slice(0, 8) + '...' + npub.slice(-8);
 }

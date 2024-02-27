@@ -27,7 +27,7 @@
 </header>
 
 <div class="px-4 py-4 flex flex-col items-center">
-	<main class="lg:w-2/5 w-2/3">
+	<main class="lg:w-2/5 md:w-2/3">
 		<slot />
 	</main>
 </div>
