@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { relays, relayPool } from '$lib/relays';
+	import { readRelays, relayPool } from '$lib/relays';
 	import { page } from '$app/stores';
 	import { parseCommunityDefinition, getCommunityTopLevelPosts, type Post } from '$lib/nostr';
 	import PostCard from '$lib/components/PostCard.svelte';
@@ -8,7 +8,7 @@
 	import Avatar from '$lib/components/Avatar.svelte';
 
 	let communityPromise = relayPool
-		.get(get(relays), { ids: [$page.params.community] })
+		.get($readRelays, { ids: [$page.params.community] })
 		.then((event) => (event ? parseCommunityDefinition(event) : Promise.reject('Event not found')));
 
 	let posts: Post[] = [];

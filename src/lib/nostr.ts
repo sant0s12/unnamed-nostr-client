@@ -1,5 +1,5 @@
 import { kinds } from 'nostr-tools';
-import { relayPool, relays } from '$lib/relays';
+import { relayPool, readRelays } from '$lib/relays';
 import type { Event } from 'nostr-tools';
 import { get } from 'svelte/store';
 import { isValid } from 'nostr-tools/nip05';
@@ -42,7 +42,7 @@ export type User = {
 export async function getTopCommunities(since: Date, limit?: number) {
 	let communities: Map<string, number> = new Map();
 
-	let lists = await relayPool.querySync(get(relays), {
+	let lists = await relayPool.querySync(get(readRelays), {
 		kinds: [kinds.CommunitiesList],
 		since: since.getTime() / 1000,
 		limit: limit
@@ -60,7 +60,7 @@ export async function getTopCommunities(since: Date, limit?: number) {
 }
 
 export async function getNewCommunities(limit: number) {
-	let events = await relayPool.querySync(get(relays), {
+	let events = await relayPool.querySync(get(readRelays), {
 		kinds: [kinds.CommunityDefinition],
 		limit: limit
 	});
@@ -68,7 +68,7 @@ export async function getNewCommunities(limit: number) {
 }
 
 export async function getCommunity(author: User, name: string): Promise<Community | null> {
-	let events = await relayPool.querySync(get(relays), {
+	let events = await relayPool.querySync(get(readRelays), {
 		kinds: [kinds.CommunityDefinition],
 		authors: [author.pubkey],
 		'#d': [name]
@@ -135,7 +135,7 @@ export function getCommunitySubscribers(
 ) {
 	try {
 		relayPool
-			.querySync(get(relays), {
+			.querySync(get(readRelays), {
 				kinds: [kinds.CommunitiesList],
 				'#a': [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
 			})
@@ -146,7 +146,7 @@ export function getCommunitySubscribers(
 }
 
 export async function getUserMetadata(user: User) {
-	let event = await relayPool.get(get(relays), {
+	let event = await relayPool.get(get(readRelays), {
 		kinds: [kinds.Metadata],
 		authors: [user.pubkey]
 	});
@@ -183,7 +183,7 @@ export async function parseUserMetadata(event: Event) {
 }
 
 export async function getPostReactions(post: Post) {
-	let events = await relayPool.querySync(get(relays), {
+	let events = await relayPool.querySync(get(readRelays), {
 		kinds: [kinds.Reaction],
 		'#e': [post.id],
 		'#p': [post.author.pubkey]
@@ -200,7 +200,7 @@ export async function getPostReactions(post: Post) {
 
 export function getCommunityTopLevelPosts(community: Community, callback: (posts: Post) => void) {
 	relayPool.subscribeManyEose(
-		get(relays),
+		get(readRelays),
 		[
 			{
 				kinds: [kinds.ShortTextNote, kinds.LongFormArticle, kinds.Repost],

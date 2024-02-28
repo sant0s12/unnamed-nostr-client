@@ -2,6 +2,8 @@
 	import { DarkMode, NavBrand, NavHamburger, NavLi, NavUl, Navbar } from 'flowbite-svelte';
 	import '../app.css';
 	import { base } from '$app/paths';
+	import Avatar from '$lib/components/Avatar.svelte';
+	import { loggedInUser, loginWithExtension } from '$lib/auth';
 </script>
 
 <header class="sticky top-0 z-20">
@@ -21,6 +23,11 @@
 			<NavLi href="{base}/communities">Communities</NavLi>
 			<NavLi>
 				<DarkMode btnClass="" />
+			</NavLi>
+			<NavLi>
+				{#await loginWithExtension() then }
+					<Avatar size="sm" src={$loggedInUser?.picture} />
+				{/await}
 			</NavLi>
 		</NavUl>
 	</Navbar>

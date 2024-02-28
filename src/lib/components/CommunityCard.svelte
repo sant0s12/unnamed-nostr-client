@@ -8,9 +8,7 @@
 
 <div class="flex w-full p-2 space-x-2 items-start">
 	<div>
-		<Avatar size="sm" src={community.image} fallback={community.name}>
-			{community.name.slice(0, 2).toUpperCase()}
-		</Avatar>
+		<Avatar size="sm" src={community.image} fallback={community.name} />
 	</div>
 	<div class="justify-center w-full">
 		<a href={`${base}/c/${community.id}`} class="h3 dark:text-white">{community.name}</a>
