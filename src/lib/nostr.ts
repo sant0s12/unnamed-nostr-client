@@ -182,6 +182,7 @@ export async function parseUserMetadata(event: Event) {
 	return user;
 }
 
+// TODO: Remove multiple reactions from the same user
 export async function getPostReactions(post: Post) {
 	let events = await relayPool.querySync(get(readRelays), {
 		kinds: [kinds.Reaction],
