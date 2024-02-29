@@ -8,13 +8,22 @@ export const defaultRelays = ['wss://nos.lol'];
 export const readRelays = writable(defaultRelays as string[]);
 export const writeRelays = writable(defaultRelays as string[]);
 
-try {
-	const nostrWatchOnline = await fetch('https://api.nostr.watch/v1/online').then((res) =>
-		res.json()
-	);
-	readRelays.set(_.sampleSize(nostrWatchOnline, 10));
-} catch (e) {
-	console.error('Failed to fetch online relays', e);
+let nostrWatchOnline: string[] = [];
+
+export async function setRandomRelays() {
+	try {
+		if (nostrWatchOnline.length === 0) {
+			nostrWatchOnline = await fetch('https://api.nostr.watch/v1/online').then((res) => res.json());
+
+			if (nostrWatchOnline.length === 0) {
+				throw new Error('No online relays');
+			}
+		}
+
+		readRelays.set(_.sampleSize(nostrWatchOnline, 10));
+	} catch (e) {
+		console.error('Failed to fetch online relays', e);
+	}
 }
 
 export async function getUserRelays(user: User) {
@@ -47,8 +56,10 @@ export async function getUserRelays(user: User) {
 		}
 
 		console.log('Relays updated', newReadRelays, newWriteRelays);
+		return true;
 	} else {
 		console.error('Failed to get user relay list');
+		return false;
 	}
 }
 

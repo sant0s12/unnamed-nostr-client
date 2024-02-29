@@ -3,7 +3,7 @@
 	import '../app.css';
 	import { base } from '$app/paths';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import { loggedInUser, loginWithExtension } from '$lib/auth';
+	import { loggedInUser } from '$lib/auth';
 </script>
 
 <header class="sticky top-0 z-20">
@@ -25,9 +25,7 @@
 				<DarkMode btnClass="" />
 			</NavLi>
 			<NavLi>
-				{#await loginWithExtension() then }
-					<Avatar size="sm" src={$loggedInUser?.picture} />
-				{/await}
+				<Avatar size="sm" src={$loggedInUser?.picture} />
 			</NavLi>
 		</NavUl>
 	</Navbar>
