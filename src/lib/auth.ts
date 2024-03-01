@@ -1,9 +1,9 @@
 import { browser } from '$app/environment';
 import { persisted } from 'svelte-persisted-store';
 import type { EventTemplate, VerifiedEvent } from 'nostr-tools';
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { getUserMetadata, type User } from '$lib/nostr';
-import { getUserRelays, setRandomRelays } from './relays';
+import { getUserRelays, setRandomRelay } from './relays';
 
 declare global {
 	interface Window {
@@ -14,7 +14,7 @@ declare global {
 	}
 }
 
-export async function loginWithExtension() {
+export async function loginWithExtension(retries: number = 10) {
 	if (browser && window.hasOwnProperty('nostr')) {
 		let pubkey = await window.nostr.getPublicKey();
 		if (!pubkey) {
@@ -24,18 +24,17 @@ export async function loginWithExtension() {
 		let user = { pubkey };
 
 		let found = false;
-		let tries = 5;
-		for (let i = 0; i < 5; i++) {
+		for (let i = 0; i < retries; i++) {
 			if (await getUserRelays(user)) {
 				found = true;
 				break;
 			} else {
-				await setRandomRelays();
+				await setRandomRelay();
 			}
 		}
 
 		if (!found) {
-			throw new Error(`Failed to get user relays after ${tries} tries`);
+			throw new Error(`Failed to get user relays after ${retries} tries`);
 		}
 
 		loggedInUser.set(await getUserMetadata(user));
@@ -43,7 +42,7 @@ export async function loginWithExtension() {
 
 		console.log("Successfully logged in");
 
-		return loggedInUser;
+		return get(loggedInUser);
 	} else {
 		throw new Error('No extension found');
 	}

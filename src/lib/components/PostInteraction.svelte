@@ -5,23 +5,21 @@
 	import { relayPool, writeRelays } from '$lib/relays';
 	import { Button, ButtonGroup } from 'flowbite-svelte';
 	import { ChevronDownOutline, ChevronUpOutline, MessageDotsSolid } from 'flowbite-svelte-icons';
-	import { kinds, type NostrEvent, type UnsignedEvent } from 'nostr-tools';
-	import type { ReactionEventTemplate } from 'nostr-tools/nip25';
+	import { kinds, type UnsignedEvent } from 'nostr-tools';
 	import { onMount } from 'svelte';
 
 	export let post: Post;
 
 	let comments = 0;
-	let upvotes = 0;
-	let downvotes = 0;
+
+	let reactions: Map<string, number> = new Map();
+	$: upvotes = reactions.get('+') || 0;
+	$: downvotes = reactions.get('-') || 0;
 	let userVote = 0;
 
-	onMount(async () => {
-		let reactions = await getPostReactions(post);
-		upvotes = reactions.get('+') || 0;
-		downvotes = reactions.get('-') || 0;
-
-		userVote = await getUserVote();
+	onMount(() => {
+		getPostReactions(post).then((r) => (reactions = r));
+		getUserVote().then((v) => (userVote = v));
 	});
 
 	async function getUserVote() {
@@ -55,19 +53,25 @@
 			pubkey: $loggedInUser.pubkey,
 			created_at: Math.round(new Date().getTime() / 1000),
 			content: vote == 1 ? '+' : '-',
-			tags: [['e', post.id], ['p', post.author.pubkey]],
+			tags: [
+				['e', post.id],
+				['p', post.author.pubkey]
+			]
 		};
-
-		console.log(reactionEvent.created_at);
 
 		let signedEvent = await window.nostr.signEvent(reactionEvent);
 		if (signedEvent) {
-			await Promise.all(relayPool.publish($writeRelays, signedEvent));
+			await Promise.any(relayPool.publish($writeRelays, signedEvent));
 		} else {
 			console.error('Failed to sign event');
 		}
 
-		await getUserVote();
+		userVote = await getUserVote();
+		if (vote == 1) {
+			reactions = reactions.set('+', (reactions.get('+') || 0) + 1);
+		} else {
+			reactions = reactions.set('-', (reactions.get('-') || 0) + 1);
+		}
 	}
 </script>
 

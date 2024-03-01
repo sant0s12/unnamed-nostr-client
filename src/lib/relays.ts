@@ -10,7 +10,7 @@ export const writeRelays = writable(defaultRelays as string[]);
 
 let nostrWatchOnline: string[] = [];
 
-export async function setRandomRelays() {
+export async function setRandomRelay() {
 	try {
 		if (nostrWatchOnline.length === 0) {
 			nostrWatchOnline = await fetch('https://api.nostr.watch/v1/online').then((res) => res.json());
@@ -20,7 +20,7 @@ export async function setRandomRelays() {
 			}
 		}
 
-		readRelays.set(_.sampleSize(nostrWatchOnline, 10));
+		readRelays.set(_.sampleSize(nostrWatchOnline, 1));
 	} catch (e) {
 		console.error('Failed to fetch online relays', e);
 	}
