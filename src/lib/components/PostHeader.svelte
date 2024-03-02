@@ -5,6 +5,7 @@
 	import DOMPurify from 'dompurify';
 	import { ArrowsRepeatOutline, BadgeCheckSolid } from 'flowbite-svelte-icons';
 	import { onMount } from 'svelte';
+	import { formatDistance } from 'date-fns';
 
 	export let post: Post;
 	export let showCommunity: boolean = false;
@@ -29,6 +30,10 @@
 	}
 
 	$: if (post.author.profile === undefined) post.author.fetchProfile().then(() => (post = post));
+
+	let postTime = post.created_at ? formatDistance(new Date(post.created_at * 1000), new Date(), {
+		addSuffix: true
+	}) : 'some time ago';
 
 	// Await the communities
 	onMount(async () => {
@@ -69,22 +74,26 @@
 				{@html joinedLinks}
 			</div>
 		{/if}
-		<a
-			href="{base}/p/{post.author.pubkey}"
-			class="inline-flex space-x-1 items-center hover:underline"
-		>
-			{#if post.author.profile?.name}
-				<p>{post.author.profile.name}</p>
-			{:else}
-				<p>{npubEncodeShort(post.author.pubkey)}</p>
-			{/if}
-			<!-- {#if post.author.verified}
+		<div class="flex flex-row space-x-1">
+			<a
+				href="{base}/p/{post.author.pubkey}"
+				class="inline-flex space-x-1 items-center hover:underline"
+			>
+				{#if post.author.profile?.name}
+					<p>{post.author.profile.name}</p>
+				{:else}
+					<p>{npubEncodeShort(post.author.pubkey)}</p>
+				{/if}
+				<!-- {#if post.author.verified}
 				<BadgeCheckSolid size="xs" />
 				<div>
 					{post.author.nip05}
 				</div>
-	{/if} -->
-		</a>
+			{/if} -->
+			</a>
+			<p>•</p>
+			<p>{postTime}</p>
+		</div>
 	</div>
 </div>
 {#if post.repostedBy}
