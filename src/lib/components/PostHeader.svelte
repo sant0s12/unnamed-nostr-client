@@ -28,7 +28,7 @@
 		joinedLinks = communityLinks.join('<span class="text-gray-400"> • </span>');
 	}
 
-	$: post.author.fetchProfile();
+	$: if (post.author.profile === undefined) post.author.fetchProfile().then(() => (post = post));
 
 	// Await the communities
 	onMount(async () => {
