@@ -2,7 +2,6 @@
 	import CommunityCard from '$lib/components/CommunityCard.svelte';
 	import InfiniteLoading, { type InfiniteEvent } from 'svelte-infinite-loading';
 	import { type Community, getTopCommunities, getCommunity, getNewCommunities } from '$lib/nostr';
-	import pLimit from 'p-limit';
 	import { onMount } from 'svelte';
 	import { Heading, Select, Spinner } from 'flowbite-svelte';
 
@@ -27,13 +26,11 @@
 			let date = new Date(0);
 			let topCommunities = await getTopCommunities(date);
 
-			let limit = pLimit(5);
-
 			topCommunities.map((community) => {
 				let author = { pubkey: community[0].split(':')[1] };
 				let name = community[0].split(':')[2];
 
-				communities = [...communities, limit(() => getCommunity(author, name))];
+				communities = [...communities, getCommunity(author, name)];
 			});
 		} else {
 			communities = await getNewCommunities(100);

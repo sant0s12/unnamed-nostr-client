@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { loggedInUser } from '$lib/auth';
-	import { getPostReactions, type Post } from '$lib/nostr';
-	import { relayPool, writeRelays } from '$lib/relays';
+	import { getPostReactions, ndk, type Post } from '$lib/nostr';
+	import { NDKEvent } from '@nostr-dev-kit/ndk';
 	import { Button, ButtonGroup } from 'flowbite-svelte';
 	import { ChevronDownOutline, ChevronUpOutline, MessageDotsSolid } from 'flowbite-svelte-icons';
 	import { kinds, type UnsignedEvent } from 'nostr-tools';
@@ -23,9 +22,9 @@
 	});
 
 	async function getUserVote() {
-		if ($loggedInUser) {
-			let event = await relayPool.get($writeRelays, {
-				authors: [$loggedInUser.pubkey],
+		if ($ndk.activeUser) {
+			let event = await $ndk.fetchEvent({
+				authors: [$ndk.activeUser.pubkey],
 				kinds: [kinds.Reaction],
 				'#e': [post.id],
 				'#p': [post.author.pubkey]
@@ -44,27 +43,22 @@
 	}
 
 	async function vote(vote: number) {
-		if (userVote == vote || !$loggedInUser) {
+		if (userVote == vote || !$ndk.activeUser) {
 			return;
 		}
 
-		let reactionEvent: UnsignedEvent = {
+		let reactionEvent = new NDKEvent($ndk, {
 			kind: kinds.Reaction,
-			pubkey: $loggedInUser.pubkey,
+			pubkey: $ndk.activeUser.pubkey,
 			created_at: Math.round(new Date().getTime() / 1000),
 			content: vote == 1 ? '+' : '-',
 			tags: [
 				['e', post.id],
 				['p', post.author.pubkey]
 			]
-		};
+		});
 
-		let signedEvent = await window.nostr.signEvent(reactionEvent);
-		if (signedEvent) {
-			await Promise.any(relayPool.publish($writeRelays, signedEvent));
-		} else {
-			console.error('Failed to sign event');
-		}
+		await reactionEvent.publish();
 
 		userVote = await getUserVote();
 		if (vote == 1) {

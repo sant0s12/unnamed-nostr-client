@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import PostInteraction from '$lib/components/PostInteraction.svelte';
-	import { relayPool, readRelays } from '$lib/relays';
-	import { type Post, parsePost } from '$lib/nostr';
+	import { type Post, parsePost, ndk } from '$lib/nostr';
 	import { Heading, Skeleton } from 'flowbite-svelte';
 	import PostHeader from '$lib/components/PostHeader.svelte';
 
 	async function findEvent(): Promise<Post | undefined> {
 		let eventId = $page.params.post;
 
-		let event = await relayPool.get($readRelays, { ids: [eventId] });
+		let event = await $ndk.fetchEvent({ ids: [eventId] });
 		if (!event) {
 			throw new Error('Event not found');
 		}

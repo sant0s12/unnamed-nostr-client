@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import { getUserMetadata, npubEncodeShort, type Community, type Post } from '$lib/nostr';
+	import { npubEncodeShort, type Community, type Post, ndk } from '$lib/nostr';
 	import DOMPurify from 'dompurify';
 	import { ArrowsRepeatOutline, BadgeCheckSolid } from 'flowbite-svelte-icons';
 	import { onMount } from 'svelte';
@@ -15,8 +15,8 @@
 
 	$: {
 		for (const community of communities) {
-			community.name = DOMPurify.sanitize(community.name, {ALLOWED_TAGS: []});
-			community.id = DOMPurify.sanitize(community.id, {ALLOWED_TAGS: []});
+			community.name = DOMPurify.sanitize(community.name, { ALLOWED_TAGS: [] });
+			community.id = DOMPurify.sanitize(community.id, { ALLOWED_TAGS: [] });
 
 			communityLinks.push(
 				`<a href="${base}/c/${community.id}" class="hover:underline"> <p>${community.name}</p> </a>`
@@ -28,12 +28,7 @@
 		joinedLinks = communityLinks.join('<span class="text-gray-400"> • </span>');
 	}
 
-	// Get the user metadata
-	onMount(async () => {
-		if (!post.author.meta) {
-			post.author = await getUserMetadata(post.author);
-		}
-	});
+	$: post.author.fetchProfile();
 
 	// Await the communities
 	onMount(async () => {
@@ -65,7 +60,7 @@
 		</div>
 	{:else}
 		<a href="{base}/p/{post.author.pubkey}">
-			<Avatar src={post.author.picture} fallback={post.author.name} size={'xs'} />
+			<Avatar src={post.author.profile?.image} fallback={post.author.profile?.name} size={'xs'} />
 		</a>
 	{/if}
 	<div class="flex flex-col text-xs justify-center items-start">
@@ -78,45 +73,47 @@
 			href="{base}/p/{post.author.pubkey}"
 			class="inline-flex space-x-1 items-center hover:underline"
 		>
-			{#if post.author.name}
-				<p>{post.author.name}</p>
+			{#if post.author.profile?.name}
+				<p>{post.author.profile.name}</p>
 			{:else}
 				<p>{npubEncodeShort(post.author.pubkey)}</p>
 			{/if}
-			{#if post.author.verified}
+			<!-- {#if post.author.verified}
 				<BadgeCheckSolid size="xs" />
 				<div>
 					{post.author.nip05}
 				</div>
-			{/if}
+	{/if} -->
 		</a>
 	</div>
 </div>
 {#if post.repostedBy}
 	{#each post.repostedBy as repostedBy}
 		{#await repostedBy then repostedBy}
-			{#await getUserMetadata(repostedBy.author) then repostAuthor}
-				<div class="flex flex-row overflow-hidden space-x-2 items-center">
-					<ArrowsRepeatOutline size="xs" />
-					<div class="flex flex-col text-xs justify-center items-start">
-						<a
-							href="{base}/p/{repostAuthor.pubkey}"
-							class="inline-flex space-x-1 items-center hover:underline"
-						>
-							{#if repostAuthor.name}
-								<p>{repostAuthor.name}</p>
-							{:else}
-								<p>{npubEncodeShort(repostAuthor.pubkey)}</p>
-							{/if}
-							{#if repostAuthor.verified}
-								<BadgeCheckSolid size="xs" />
-								<div>
-									{repostAuthor.nip05}
-								</div>
-							{/if}
-						</a>
+			{#await repostedBy.author.fetchProfile() then repostAuthor}
+				{#if repostAuthor}
+					<div class="flex flex-row overflow-hidden space-x-2 items-center">
+						<ArrowsRepeatOutline size="xs" />
+						<div class="flex flex-col text-xs justify-center items-start">
+							<a
+								href="{base}/p/{repostAuthor.pubkey}"
+								class="inline-flex space-x-1 items-center hover:underline"
+							>
+								{#if repostAuthor.name}
+									<p>{repostAuthor.name}</p>
+								{:else if repostAuthor.pubkey}
+									<p>{npubEncodeShort(repostAuthor.pubkey)}</p>
+								{/if}
+								{#if repostAuthor.verified}
+									<BadgeCheckSolid size="xs" />
+									<div>
+										{repostAuthor.nip05}
+									</div>
+								{/if}
+							</a>
+						</div>
 					</div>
-				</div>
+				{/if}
 			{/await}
 		{/await}
 	{/each}
