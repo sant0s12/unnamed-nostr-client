@@ -1,53 +1,22 @@
-import { browser } from '$app/environment';
 import { persisted } from 'svelte-persisted-store';
-import type { EventTemplate, VerifiedEvent } from 'nostr-tools';
-import { get, writable } from 'svelte/store';
-import { getUserMetadata, type User } from '$lib/nostr';
-import { getUserRelays, setRandomRelay } from './relays';
+import { get } from 'svelte/store';
+import { ndk, signer } from '$lib/nostr';
+import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
 
-declare global {
-	interface Window {
-		nostr: {
-			getPublicKey: () => Promise<string>;
-			signEvent: (event: EventTemplate) => Promise<VerifiedEvent>;
-		};
-	}
-}
-
-export async function loginWithExtension(retries: number = 10) {
-	if (browser && window.hasOwnProperty('nostr')) {
-		let pubkey = await window.nostr.getPublicKey();
-		if (!pubkey) {
-			throw new Error('Failed to get user pubkey');
-		}
-
-		let user = { pubkey };
-
-		let found = false;
-		for (let i = 0; i < retries; i++) {
-			if (await getUserRelays(user)) {
-				found = true;
-				break;
-			} else {
-				await setRandomRelay();
-			}
-		}
-
-		if (!found) {
-			throw new Error(`Failed to get user relays after ${retries} tries`);
-		}
-
-		loggedInUser.set(await getUserMetadata(user));
-		loggedInWithExtension.set(true);
-
-		console.log("Successfully logged in");
-
-		return get(loggedInUser);
-	} else {
-		throw new Error('No extension found');
-	}
+export function loginWithExtension() {
+	signer.set(new NDKNip07Signer());
+	get(signer)
+		.user()
+		.then((user) => {
+			ndk.update(($ndk) => {
+				$ndk.signer = get(signer);
+				$ndk.activeUser = user;
+				$ndk.activeUser.ndk = $ndk;
+				$ndk.activeUser.fetchProfile().then(() => ndk.set(get(ndk)));
+				$ndk.connect();
+				return $ndk;
+			});
+		});
 }
 
 export const loggedInWithExtension = persisted('loggedInWithExtension', false);
-
-export const loggedInUser = writable<User | null>(null);

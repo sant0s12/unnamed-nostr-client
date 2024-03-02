@@ -44,6 +44,8 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@nostr-dev-kit/ndk": "^2.5.0",
+		"@nostr-dev-kit/ndk-svelte": "^2.2.7",
 		"dompurify": "^3.0.9",
 		"lodash-es": "^4.17.21",
 		"nostr-tools": "^2.1.7",

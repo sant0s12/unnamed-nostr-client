@@ -1,14 +1,22 @@
 import { kinds } from 'nostr-tools';
-import { relayPool, readRelays } from '$lib/relays';
-import type { Event } from 'nostr-tools';
-import { get } from 'svelte/store';
-import { isValid } from 'nostr-tools/nip05';
+import { defaultRelays } from '$lib/relays';
+import { derived, get, writable, type Writable } from 'svelte/store';
 import { getRepostedEvent } from 'nostr-tools/nip18';
 import { npubEncode } from 'nostr-tools/nip19';
+import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
+import { NDKEvent, NDKUser, type NDKSigner } from '@nostr-dev-kit/ndk';
+
+export const ndk = writable(
+	new NDKSvelte({
+		explicitRelayUrls: defaultRelays
+	})
+);
+
+export let signer: Writable<NDKSigner> = writable();
 
 export type Community = {
 	id: string;
-	author: User;
+	author: NDKUser;
 	name: string;
 	description: string;
 	image: string;
@@ -20,8 +28,8 @@ export type Community = {
 
 export type Post = {
 	id: string;
-	author: User;
-	createdAt: number;
+	author: NDKUser;
+	createdAt?: number;
 	communities?: (Community | Promise<Community | null>)[];
 	title?: string;
 	content: string;
@@ -29,26 +37,16 @@ export type Post = {
 	repostedBy?: (Post | Promise<Post>)[];
 };
 
-export type User = {
-	pubkey: string;
-	name?: string;
-	nip05?: string;
-	verified?: boolean;
-	about?: string;
-	picture?: string;
-	meta?: Event;
-};
-
 export async function getTopCommunities(since: Date, limit?: number) {
 	let communities: Map<string, number> = new Map();
 
-	let lists = await relayPool.querySync(get(readRelays), {
+	let lists = await get(ndk).fetchEvents({
 		kinds: [kinds.CommunitiesList],
 		since: since.getTime() / 1000,
 		limit: limit
 	});
 
-	lists.forEach((list: Event) => {
+	lists.forEach((list: NDKEvent) => {
 		list.tags.forEach((tag) => {
 			if (tag[0] === 'a' && tag[1].startsWith(kinds.CommunityDefinition.toString())) {
 				communities.set(tag[1], (communities.get(tag[1]) || 0) + 1);
@@ -60,28 +58,28 @@ export async function getTopCommunities(since: Date, limit?: number) {
 }
 
 export async function getNewCommunities(limit: number) {
-	let events = await relayPool.querySync(get(readRelays), {
-		kinds: [kinds.CommunityDefinition],
+	let events = await get(ndk).fetchEvents({
+		kinds: [kinds.CommunityDefinition as number],
 		limit: limit
 	});
-	return events.map(parseCommunityDefinition);
+
+	let res: Community[] = [];
+	events.forEach((e) => res.push(parseCommunityDefinition(e)));
+
+	return res;
 }
 
-export async function getCommunity(author: User, name: string): Promise<Community | null> {
-	let events = await relayPool.querySync(get(readRelays), {
-		kinds: [kinds.CommunityDefinition],
+export async function getCommunity(author: NDKUser, name: string): Promise<Community | null> {
+	let event = await get(ndk).fetchEvent({
+		kinds: [kinds.CommunityDefinition as number],
 		authors: [author.pubkey],
 		'#d': [name]
 	});
 
-	if (events.length === 0) {
-		return null;
-	}
-
-	return parseCommunityDefinition(events[0]);
+	return event === null ? event : parseCommunityDefinition(event);
 }
 
-export function parseCommunityDefinition(event: Event): Community {
+export function parseCommunityDefinition(event: NDKEvent): Community {
 	if (event.kind !== kinds.CommunityDefinition) {
 		throw new Error('Invalid event kind');
 	}
@@ -117,7 +115,7 @@ export function parseCommunityDefinition(event: Event): Community {
 
 	const community: Community = {
 		id,
-		author: { pubkey: author },
+		author: new NDKUser({ pubkey: event.pubkey }),
 		name: name,
 		description,
 		image,
@@ -134,8 +132,8 @@ export function getCommunitySubscribers(
 	callback: (numSubscribers: number) => void
 ) {
 	try {
-		relayPool
-			.querySync(get(readRelays), {
+		get(ndk)
+			.fetchEvents({
 				kinds: [kinds.CommunitiesList],
 				'#a': [`${kinds.CommunityDefinition}:${community.author}:${community.name}`]
 			})
@@ -145,46 +143,9 @@ export function getCommunitySubscribers(
 	}
 }
 
-export async function getUserMetadata(user: User) {
-	let event = await relayPool.get(get(readRelays), {
-		kinds: [kinds.Metadata],
-		authors: [user.pubkey]
-	});
-
-	if (!event) {
-		return user;
-	}
-
-	user.meta = event;
-
-	return parseUserMetadata(event);
-}
-
-export async function parseUserMetadata(event: Event) {
-	if (event.kind !== kinds.Metadata) {
-		throw new Error('Invalid event kind');
-	}
-
-	let user: User = {
-		pubkey: event.pubkey
-	};
-
-	let content = JSON.parse(event.content);
-	user.name = content.name;
-	user.nip05 = content.nip05;
-	user.about = content.about;
-	user.picture = content.picture;
-
-	if (user.nip05) {
-		user.verified = await isValid(event.pubkey, user.nip05);
-	}
-
-	return user;
-}
-
 // TODO: Remove multiple reactions from the same user
 export async function getPostReactions(post: Post) {
-	let events = await relayPool.querySync(get(readRelays), {
+	let events = await get(ndk).fetchEvents({
 		kinds: [kinds.Reaction],
 		'#e': [post.id],
 		'#p': [post.author.pubkey]
@@ -199,30 +160,36 @@ export async function getPostReactions(post: Post) {
 	return reactions;
 }
 
-export function getCommunityTopLevelPosts(community: Community, callback: (posts: Post) => void) {
-	relayPool.subscribeManyEose(
-		get(readRelays),
-		[
-			{
-				kinds: [kinds.ShortTextNote, kinds.LongFormArticle, kinds.Repost],
-				'#a': [`${kinds.CommunityDefinition}:${community.author.pubkey}:${community.name}`]
-			}
-		],
+export function getCommunityTopLevelPosts(community: Community) {
+	let eventStore = get(ndk).storeSubscribe(
 		{
-			onevent(event) {
-				if (!event) {
-					return;
-				} else if (event.kind !== kinds.Repost && event.tags.some((tag) => tag[0] === 'e')) {
-					return;
-				}
-
-				let post = parsePost(event);
-				if (post) {
-					callback(post);
-				}
-			}
+			kinds: [kinds.ShortTextNote, kinds.LongFormArticle, kinds.Repost],
+			'#a': [`${kinds.CommunityDefinition}:${community.author.pubkey}:${community.name}`],
+		},
+		{
+			closeOnEose: true
 		}
 	);
+
+	let postStore = derived(eventStore, ($eventStore) => {
+		return $eventStore.flatMap((event) => {
+			if (!event) {
+				return [];
+			} else if (event.kind !== kinds.Repost && event.tags.some((tag) => tag[0] === 'e')) {
+				return [];
+			}
+
+			let post = parsePost(event);
+
+			if (!post) {
+				return [];
+			} else {
+				return post;
+			}
+		});
+	});
+
+	return postStore;
 }
 
 export function npubEncodeShort(pubkey: string) {
@@ -230,21 +197,22 @@ export function npubEncodeShort(pubkey: string) {
 	return npub.slice(0, 8) + '...' + npub.slice(-8);
 }
 
-export function getEventCommunities(event: Event) {
+export function getEventCommunities(event: NDKEvent) {
 	let communities: Promise<Community | null>[] = [];
 	for (const tag of event.tags) {
 		if (tag[0] === 'a' && tag[1].split(':')[0] === kinds.CommunityDefinition.toString()) {
-			communities.push(getCommunity({ pubkey: tag[1].split(':')[1] }, tag[1].split(':')[2]));
+			let author = new NDKUser({ pubkey: tag[1].split(':')[1] });
+			communities.push(getCommunity(author, tag[1].split(':')[2]));
 		}
 	}
 
 	return communities;
 }
 
-export function parsePost(event: Event) {
+export function parsePost(event: NDKEvent) {
 	let post: Post = {
 		id: event.id,
-		author: { pubkey: event.pubkey },
+		author: event.author,
 		content: event.content,
 		createdAt: event.created_at
 	};
@@ -259,15 +227,10 @@ export function parsePost(event: Event) {
 
 		let repostedPost: Post = {
 			id: repostedEvent.id,
-			author: { pubkey: repostedEvent.pubkey },
+			author: new NDKUser({ pubkey: repostedEvent.pubkey }),
 			content: repostedEvent.content,
 			createdAt: repostedEvent.created_at,
-			communities: [
-				...getEventCommunities(repostedEvent),
-				...getEventCommunities(repostedEvent),
-				...post.communities,
-				...post.communities
-			]
+			communities: [...getEventCommunities(new NDKEvent(get(ndk), repostedEvent)), ...post.communities]
 		};
 
 		repostedPost.repostedBy = [post];

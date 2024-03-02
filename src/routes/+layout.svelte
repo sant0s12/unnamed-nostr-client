@@ -3,7 +3,7 @@
 	import '../app.css';
 	import { base } from '$app/paths';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import { loggedInUser } from '$lib/auth';
+	import { ndk } from '$lib/nostr';
 </script>
 
 <header class="sticky top-0 z-20">
@@ -25,7 +25,7 @@
 				<DarkMode btnClass="" />
 			</NavLi>
 			<NavLi>
-				<Avatar size="sm" src={$loggedInUser?.picture} />
+				<Avatar size="sm" src={$ndk.activeUser?.profile?.image} />
 			</NavLi>
 		</NavUl>
 	</Navbar>
