@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import PostInteraction from '$lib/components/PostInteraction.svelte';
-	import { type Post, parsePost, ndk } from '$lib/nostr';
+	import { Post } from '$lib/nostr';
+	import ndk from '$lib/stores/ndk';
 	import { Heading, Skeleton } from 'flowbite-svelte';
 	import PostHeader from '$lib/components/PostHeader.svelte';
 
-	async function findEvent(): Promise<Post | undefined> {
+async function findEvent(): Promise<Post | undefined> {
 		let eventId = $page.params.post;
 
 		let event = await $ndk.fetchEvent({ ids: [eventId] });
@@ -13,7 +14,7 @@
 			throw new Error('Event not found');
 		}
 
-		return parsePost(event);
+		return Post.from(event);
 	}
 </script>
 
@@ -24,10 +25,10 @@
 		{#if post}
 			<div class="flex flex-col space-y-2">
 				<PostHeader {post} showCommunity />
-				{#if post.title}
+				{#if post?.title}
 					<Heading tag="h3" class="dark:text-white">{post.title}</Heading>
 				{/if}
-				<p class="dark:text-white">{post.content}</p>
+				<p class="dark:text-white break-words">{post.content}</p>
 				<PostInteraction {post} />
 			</div>
 		{/if}

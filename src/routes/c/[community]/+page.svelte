@@ -3,16 +3,20 @@
 	import {
 		parseCommunityDefinition,
 		getCommunityTopLevelPosts,
+		getTopPosts,
 		type Post,
-		ndk,
 		type Community
 	} from '$lib/nostr';
 	import PostCard from '$lib/components/PostCard.svelte';
 	import { Heading, Spinner } from 'flowbite-svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import { readable, type Readable } from 'svelte/store';
+	import { derived, get, readable, type Readable } from 'svelte/store';
+	import ndk from '$lib/stores/ndk';
 
-	let communityStore = $ndk.storeSubscribe({ ids: [$page.params.community] }, { closeOnEose: true });
+	let communityStore = $ndk.storeSubscribe(
+		{ ids: [$page.params.community] },
+		{ closeOnEose: true }
+	);
 
 	let community: Community;
 	$: {
@@ -24,7 +28,7 @@
 	let topLevelPosts: Readable<Post[]> = readable([]);
 	$: {
 		if (community !== undefined) {
-			topLevelPosts = getCommunityTopLevelPosts(community);
+			topLevelPosts = getTopPosts(community);
 		}
 	}
 </script>
@@ -42,7 +46,7 @@
 	</div>
 
 	<ul class="flex flex-col space-y-3 items-stretch">
-		{#each $topLevelPosts as post}
+		{#each $topLevelPosts as post (post.id)}
 			<li>
 				<PostCard {post} />
 			</li>

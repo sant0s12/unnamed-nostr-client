@@ -1,6 +1,6 @@
 import { persisted } from 'svelte-persisted-store';
 import { get } from 'svelte/store';
-import { ndk, signer } from '$lib/nostr';
+import ndk, { signer } from '$lib/stores/ndk';
 import { NDKNip07Signer } from '@nostr-dev-kit/ndk';
 
 export function loginWithExtension() {

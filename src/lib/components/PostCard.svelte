@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type Post } from '$lib/nostr';
+	import { Post } from '$lib/nostr';
 	import { Card, Heading } from 'flowbite-svelte';
 	import PostInteraction from '$lib/components/PostInteraction.svelte';
 	import { base } from '$app/paths';

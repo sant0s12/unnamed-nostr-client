@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { getPostReactions, ndk, type Post } from '$lib/nostr';
+	import { getPostReactions, type Post } from '$lib/nostr';
+	import ndk from '$lib/stores/ndk';
 	import { NDKEvent } from '@nostr-dev-kit/ndk';
 	import { Button, ButtonGroup } from 'flowbite-svelte';
 	import { ChevronDownOutline, ChevronUpOutline, MessageDotsSolid } from 'flowbite-svelte-icons';
-	import { kinds, type UnsignedEvent } from 'nostr-tools';
+	import { kinds } from 'nostr-tools';
 	import { onMount } from 'svelte';
 
 	export let post: Post;

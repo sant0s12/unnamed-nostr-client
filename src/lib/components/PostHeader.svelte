@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import { npubEncodeShort, type Community, type Post, ndk } from '$lib/nostr';
+	import { npubEncodeShort, type Community, type Post } from '$lib/nostr';
 	import DOMPurify from 'dompurify';
 	import { ArrowsRepeatOutline, BadgeCheckSolid } from 'flowbite-svelte-icons';
 	import { onMount } from 'svelte';

@@ -3,7 +3,7 @@
 	import '../app.css';
 	import { base } from '$app/paths';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import { ndk } from '$lib/nostr';
+	import ndk from '$lib/stores/ndk';
 </script>
 
 <header class="sticky top-0 z-20">

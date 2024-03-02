@@ -1,8 +1,7 @@
-import { loggedInWithExtension, loginWithExtension } from '$lib/auth';
-import {  setRandomRelay } from '$lib/relays';
+import { loginWithExtension } from '$lib/auth';
 import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
-import { ndk } from '$lib/nostr';
+import ndk from '$lib/stores/ndk';
 
 export const ssr = false;
 
