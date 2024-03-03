@@ -2,15 +2,14 @@
 	import { page } from '$app/stores';
 	import {
 		parseCommunityDefinition,
-		getCommunityTopLevelPosts,
 		getTopPosts,
-		type Post,
+		CommunityPost,
 		type Community
 	} from '$lib/nostr';
 	import PostCard from '$lib/components/PostCard.svelte';
 	import { Heading, Spinner } from 'flowbite-svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import { derived, get, readable, type Readable } from 'svelte/store';
+	import { readable, type Readable } from 'svelte/store';
 	import ndk from '$lib/stores/ndk';
 
 	let communityStore = $ndk.storeSubscribe(
@@ -25,7 +24,7 @@
 		}
 	}
 
-	let topLevelPosts: Readable<Post[]> = readable([]);
+	let topLevelPosts: Readable<CommunityPost[]> = readable([]);
 	$: {
 		if (community !== undefined) {
 			topLevelPosts = getTopPosts(community);

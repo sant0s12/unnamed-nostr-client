@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { Post } from '$lib/nostr';
+	import { CommunityPost } from '$lib/nostr';
 	import { Card, Heading } from 'flowbite-svelte';
 	import PostInteraction from '$lib/components/PostInteraction.svelte';
 	import { base } from '$app/paths';
 	import PostHeader from './PostHeader.svelte';
 
-	export let post: Post;
+	export let post: CommunityPost;
 	export let showCommunity: boolean = false;
 
 	let { content, title, id } = post;

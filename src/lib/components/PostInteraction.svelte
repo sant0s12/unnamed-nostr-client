@@ -1,39 +1,50 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { getPostReactions, type Post } from '$lib/nostr';
+	import { getPostReactions, CommunityPost } from '$lib/nostr';
 	import ndk from '$lib/stores/ndk';
-	import { NDKEvent } from '@nostr-dev-kit/ndk';
-	import { Button, ButtonGroup } from 'flowbite-svelte';
+	import { Button, ButtonGroup, Spinner } from 'flowbite-svelte';
 	import { ChevronDownOutline, ChevronUpOutline, MessageDotsSolid } from 'flowbite-svelte-icons';
 	import { kinds } from 'nostr-tools';
 	import { onMount } from 'svelte';
+	import { toast } from 'svelte-french-toast';
 
-	export let post: Post;
+	export let post: CommunityPost;
 
 	let comments = 0;
 
 	let reactions: Map<string, number> = new Map();
 	$: upvotes = reactions.get('+') || 0;
 	$: downvotes = reactions.get('-') || 0;
+
 	let userVote = 0;
+	let clickedVote = 0;
 
 	onMount(() => {
 		getPostReactions(post).then((r) => (reactions = r));
-		getUserVote().then((v) => (userVote = v));
 	});
+
+	$: if ($ndk) getUserVote().then((v) => (userVote = v));
 
 	async function getUserVote() {
 		if ($ndk.activeUser) {
-			let event = await $ndk.fetchEvent({
-				authors: [$ndk.activeUser.pubkey],
-				kinds: [kinds.Reaction],
-				'#e': [post.id],
-				'#p': [post.author.pubkey]
-			});
+			let events = await $ndk
+				.fetchEvents({
+					authors: [$ndk.activeUser.pubkey],
+					kinds: [kinds.Reaction],
+					'#e': [post.id],
+					'#p': [post.author.pubkey]
+				})
+				.then((events) =>
+					Array.from(events)
+						.filter((event) => event.content === '+' || event.content === '-')
+						.sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
+				);
 
-			if (event?.content === '+') {
+			let lastVote = events.at(0)?.content;
+
+			if (lastVote === '+') {
 				return 1;
-			} else if (event?.content === '-') {
+			} else if (lastVote === '-') {
 				return -1;
 			} else {
 				return 0;
@@ -44,41 +55,70 @@
 	}
 
 	async function vote(vote: number) {
-		if (userVote == vote || !$ndk.activeUser) {
+		if (!$ndk.activeUser) {
 			return;
 		}
 
-		let reactionEvent = new NDKEvent($ndk, {
-			kind: kinds.Reaction,
-			pubkey: $ndk.activeUser.pubkey,
-			created_at: Math.round(new Date().getTime() / 1000),
-			content: vote == 1 ? '+' : '-',
-			tags: [
-				['e', post.id],
-				['p', post.author.pubkey]
-			]
-		});
+		clickedVote = vote;
 
-		await reactionEvent.publish();
-
-		userVote = await getUserVote();
-		if (vote == 1) {
-			reactions = reactions.set('+', (reactions.get('+') || 0) + 1);
-		} else {
-			reactions = reactions.set('-', (reactions.get('-') || 0) + 1);
+		if (userVote == vote) {
+			vote = 0;
 		}
+
+		// Remove existing vote
+		let events = await $ndk
+			.fetchEvents({
+				authors: [$ndk.activeUser.pubkey],
+				kinds: [kinds.Reaction],
+				'#e': [post.id],
+				'#p': [post.author.pubkey]
+			})
+			.then((events) =>
+				Array.from(events).filter((event) => event.content === '+' || event.content === '-')
+			);
+
+		for (const event of events) {
+			await event.delete('Removing vote', true);
+		}
+
+		if (vote != 0) {
+			await post.react(vote == 1 ? '+' : '-', true);
+		}
+
+		reactions = await getPostReactions(post);
+		userVote = await getUserVote();
+
+		clickedVote = 0;
 	}
 </script>
 
 <div class="flex flex-row w-full pt-2 space-x-2 items-stretch h-10">
 	<ButtonGroup>
-		<Button size="xs" on:click={() => vote(1)} color={userVote == 1 ? 'primary' : undefined}>
-			<ChevronUpOutline />
-			{upvotes}
+		<Button
+			disabled={clickedVote != 0}
+			size="xs"
+			on:click={() => vote(1)}
+			color={userVote == 1 ? 'primary' : undefined}
+		>
+			{#if clickedVote == 1}
+				<Spinner size="4" />
+			{:else}
+				<ChevronUpOutline />
+				{upvotes}
+			{/if}
 		</Button>
-		<Button size="xs" on:click={() => vote(-1)} color={userVote == -1 ? 'primary' : undefined}>
-			<ChevronDownOutline />
-			{downvotes}
+		<Button
+			disabled={clickedVote != 0}
+			size="xs"
+			on:click={() => vote(-1)}
+			color={userVote == -1 ? 'primary' : undefined}
+		>
+			{#if clickedVote == -1}
+				<Spinner size="4" />
+			{:else}
+				<ChevronDownOutline />
+				{downvotes}
+			{/if}
 		</Button>
 	</ButtonGroup>
 	<Button href="{base}/post/{post.id}" color="alternative" size="xs">

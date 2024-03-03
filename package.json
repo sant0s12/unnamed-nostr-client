@@ -45,6 +45,7 @@
 	"type": "module",
 	"dependencies": {
 		"@nostr-dev-kit/ndk": "^2.5.0",
+		"@nostr-dev-kit/ndk-cache-dexie": "^2.2.7",
 		"@nostr-dev-kit/ndk-svelte": "^2.2.7",
 		"date-fns": "^3.3.1",
 		"dompurify": "^3.0.9",

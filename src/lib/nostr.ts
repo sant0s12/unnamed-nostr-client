@@ -1,9 +1,8 @@
-import NDK, { NDKUser, NDKEvent, type NostrEvent } from '@nostr-dev-kit/ndk';
+import NDK, { NDKUser, NDKEvent, type NostrEvent, type NDKTag } from '@nostr-dev-kit/ndk';
 import { get, writable, type Readable, type Writable } from 'svelte/store';
 import ndk from './stores/ndk';
 import { kinds } from 'nostr-tools';
 import { derived } from 'svelte/store';
-import { npubEncode } from 'nostr-tools/nip19';
 import type { NDKEventStore } from '@nostr-dev-kit/ndk-svelte';
 
 export type Community = {
@@ -124,12 +123,15 @@ export function getCommunitySubscribers(
 }
 
 // TODO: Remove multiple reactions from the same user
-export async function getPostReactions(post: Post) {
-	let events = await get(ndk).fetchEvents({
-		kinds: [kinds.Reaction],
-		'#e': [post.id],
-		'#p': [post.author.pubkey]
-	});
+export async function getPostReactions(post: CommunityPost) {
+	let events = await get(ndk).fetchEvents(
+		{
+			kinds: [kinds.Reaction],
+			'#e': [post.id],
+			'#p': [post.author.pubkey]
+		},
+		{ groupable: true, groupableDelay: 500 }
+	);
 
 	let reactions: Map<string, number> = new Map();
 
@@ -156,30 +158,46 @@ export async function getEventReactions(event: NDKEvent) {
 	return reactions;
 }
 
-export class Post extends NDKEvent {
-	sortValue: Writable<number>;
-	title?: string;
-	communities?: (Community | Promise<Community | null>)[];
+export class CommunityPost extends NDKEvent {
+	private _communities: Community[] | undefined;
+
+	repostedByEvents?: NDKEvent[];
 
 	constructor(ndk: NDK | undefined, rawEvent?: NostrEvent) {
 		super(ndk, rawEvent);
-
-		this.sortValue = writable(0);
-		this.title = this.tags.find((tag) => tag[0] === 'subject')?.at(1);
-		getEventCommunities(this).forEach((communityProise) =>
-			communityProise.then((community) => {
-				if (community) {
-					this.communities = this.communities ? [...this.communities, community] : [community];
-				}
-			})
-		);
-		getPostReactions(this).then((reactions) => {
-			this.sortValue.set(reactions.get('+') || 0);
-		});
 	}
 
 	static from(event: NDKEvent) {
-		return new Post(event.ndk, event.rawEvent());
+		return new CommunityPost(event.ndk, event.rawEvent());
+	}
+
+	get title(): string | undefined {
+		return this.tags.find((tag) => tag[0] === 'subject')?.at(1);
+	}
+
+	set title(title: string | undefined) {
+		this.removeTag('subject');
+
+		if (title) {
+			this.tags.push(['subject', title]);
+		}
+	}
+
+	async getCommunities() {
+		let communities = await Promise.all(getEventCommunities(this));
+		communities = communities.filter((c) => c !== null);
+		communities = communities as Community[];
+		this._communities = communities as Community[];
+
+		return this._communities;
+	}
+
+	get communities(): Community[] | undefined {
+		return this._communities;
+	}
+
+	set communities(communities: Community[]) {
+		this._communities = communities;
 	}
 }
 
@@ -221,7 +239,8 @@ export function getTopPosts(community: Community) {
 		},
 		{
 			closeOnEose: true
-		}
+		},
+		CommunityPost
 	);
 
 	return sortEventStore(eventStore, (event) =>
@@ -238,7 +257,7 @@ export function getCommunityTopLevelPosts(community: Community) {
 		{
 			closeOnEose: true
 		},
-		Post
+		CommunityPost
 	);
 
 	let postStore = derived(eventStore, ($eventStore) => {
@@ -260,17 +279,23 @@ export function getCommunityTopLevelPosts(community: Community) {
 	return postStore;
 }
 
-export function npubEncodeShort(pubkey: string) {
-	let npub = npubEncode(pubkey);
+export function npubShort(npub: string) {
 	return npub.slice(0, 8) + '...' + npub.slice(-8);
 }
 
 export function getEventCommunities(event: NDKEvent) {
+	let communityTags = new Set<NDKTag>();
 	let communities: Promise<Community | null>[] = [];
+
 	for (const tag of event.tags) {
-		if (tag[0] === 'a' && tag[1].split(':')[0] === kinds.CommunityDefinition.toString()) {
-			let author = new NDKUser({ pubkey: tag[1].split(':')[1] });
+		if (
+			tag[0] === 'a' &&
+			tag[1].split(':')[0] === kinds.CommunityDefinition.toString() &&
+			!communityTags.has(tag)
+		) {
+			let author = get(ndk).getUser({ pubkey: tag[1].split(':')[1] });
 			communities.push(getCommunity(author, tag[1].split(':')[2]));
+			communityTags.add(tag);
 		}
 	}
 
