@@ -56,6 +56,7 @@
 
 	async function vote(vote: number) {
 		if (!$ndk.activeUser) {
+			toast.error('You need to be logged in to vote');
 			return;
 		}
 

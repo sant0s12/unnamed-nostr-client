@@ -16,6 +16,4 @@ if (browser) {
 
 const ndk = writable(ndkSvelte);
 
-export let signer: Writable<NDKSigner> = writable();
-
 export default ndk;
