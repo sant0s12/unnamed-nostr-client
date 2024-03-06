@@ -28,22 +28,32 @@
 
 	import favicon from '$lib/assets/favicon.png';
 	import { HomeSolid, UsersGroupSolid } from 'flowbite-svelte-icons';
-	import { fly } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 
 	let dropdownOpen = false;
+
+	let sidebarOpen = true;
+	const sideBarClose = () => {
+		sidebarOpen = false;
+	};
 </script>
+
+<svelte:window on:scroll={sideBarClose} />
 
 <Toaster position="bottom-right" />
 
 <div class="min-h-svh">
 	<header class="sticky top-0 w-full z-20">
 		<Navbar fluid={true} class="bg-gray-200 dark:bg-gray-800 py-0 flex justify-between h-16">
-			<NavBrand href="{base}/">
-				<img src={favicon} class="me-3 h-6 sm:h-9" alt="Logo" />
-				<span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
-					>My soul left</span
-				>
-			</NavBrand>
+			<div class="flex">
+				<NavHamburger class="block sm:hidden ms-0" onClick={() => (sidebarOpen = !sidebarOpen)} />
+				<NavBrand href="{base}/">
+					<img src={favicon} class="me-3 h-6 sm:h-9" alt="Logo" />
+					<span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
+						>My soul left</span
+					>
+				</NavBrand>
+			</div>
 			<Button id="avatar-button" pill class="p-0 md:p-1 my-0 space-x-1" color="light" size="xs">
 				<Avatar size="md" src={$ndk.activeUser?.profile?.image} />
 				{#if $ndk.activeUser?.profile?.name}
@@ -81,27 +91,37 @@
 		</Navbar>
 	</header>
 
-	<div class="grid grid-cols-[1fr_auto_1fr]">
-		<div
-			class="max-h-[calc(100vh-theme(space.16))] max-w-full sticky top-16
-				   overflow-y-auto ml-auto"
-		>
-			<Sidebar asideClass="hidden lg:block" activeUrl={$page.url.pathname}>
-				<SidebarWrapper>
-					<SidebarGroup>
-						<SidebarItem href="{base}/" label="Home">
-							<HomeSolid slot="icon" />
-						</SidebarItem>
-						<SidebarItem href="{base}/communities" label="Communities">
-							<UsersGroupSolid slot="icon" />
-						</SidebarItem>
-					</SidebarGroup>
-				</SidebarWrapper>
-			</Sidebar>
-		</div>
-		<main class="max-w-screen-sm p-5">
+	<div class="grid grid-cols-[1fr_min-content_auto_min-content_1fr]">
+		{#key sidebarOpen}
+			<div
+				class="absolute h-full top-0 left-0
+						{sidebarOpen ? '' : 'hidden'} w-screen bg-gray-900/80"
+				in:fade
+				out:fade
+			/>
+			<div
+				class="h-[calc(100vh-theme(space.16))] max-w-full sm:sticky top-16
+				   overflow-y-auto ml-auto col-start-2 sm:block {sidebarOpen ? '' : 'hidden'} absolute"
+				in:fly={{ opacity: 100, x: -500 }}
+				out:fly={{ opacity: 100, x: -500 }}
+			>
+				<Sidebar asideClass="pt-5" activeUrl={$page.url.pathname}>
+					<SidebarWrapper>
+						<SidebarGroup>
+							<SidebarItem href="{base}/" label="Home" on:click={sideBarClose}>
+								<HomeSolid slot="icon" />
+							</SidebarItem>
+							<SidebarItem href="{base}/communities" label="Communities" on:click={sideBarClose}>
+								<UsersGroupSolid slot="icon" />
+							</SidebarItem>
+						</SidebarGroup>
+					</SidebarWrapper>
+				</Sidebar>
+			</div>
+		{/key}
+		<main class="max-w-screen-sm min-w-[min(50vw,640px)] p-5 col-start-3">
 			<slot />
 		</main>
-		<div class="mr-auto"></div>
+		<div class="col-start-4 hidden sm:block"></div>
 	</div>
 </div>
