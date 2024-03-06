@@ -94,14 +94,14 @@
 	<div class="grid grid-cols-[1fr_min-content_auto_min-content_1fr]">
 		{#key sidebarOpen}
 			<div
-				class="absolute h-full top-0 left-0
+				class="fixed h-full top-0 left-0
 						{sidebarOpen ? '' : 'hidden'} w-screen bg-gray-900/80"
 				in:fade
 				out:fade
 			/>
 			<div
-				class="h-[calc(100vh-theme(space.16))] max-w-full sm:sticky top-16
-				   overflow-y-auto ml-auto col-start-2 sm:block {sidebarOpen ? '' : 'hidden'} absolute"
+				class="h-[calc(100vh-theme(space.16))] max-w-full sm:sticky fixed top-16
+				   overflow-y-auto ml-auto col-start-2 sm:block {sidebarOpen ? '' : 'hidden'}"
 				in:fly={{ opacity: 100, x: -500 }}
 				out:fly={{ opacity: 100, x: -500 }}
 			>
