@@ -5,6 +5,7 @@
 	import ndk from '$lib/stores/ndk';
 	import { Heading, Skeleton } from 'flowbite-svelte';
 	import PostHeader from '$lib/components/PostHeader.svelte';
+	import ReplyThread from '$lib/components/ReplyThread.svelte';
 
 	async function findEvent(): Promise<CommunityPost | undefined> {
 		let eventId = $page.params.post;
@@ -14,11 +15,13 @@
 			throw new Error('Event not found');
 		}
 
+		event.tagAddress;
+
 		return CommunityPost.from(event);
 	}
 </script>
 
-<div class="pt-5">
+<div class="flex flex-col pt-5 space-y-2 border-separate">
 	{#await findEvent()}
 		<Skeleton size="xxl" />
 	{:then post}
@@ -31,6 +34,7 @@
 				<p class="dark:text-white break-words">{post.content}</p>
 				<PostInteraction {post} />
 			</div>
+			<ReplyThread isRoot event={post} rootId={post.id} />
 		{/if}
 	{:catch error}
 		<p>{error}</p>

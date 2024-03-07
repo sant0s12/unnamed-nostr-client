@@ -32,7 +32,7 @@
 
 	let dropdownOpen = false;
 
-	let sidebarOpen = true;
+	let sidebarOpen = false;
 	const sideBarClose = () => {
 		sidebarOpen = false;
 	};
@@ -60,7 +60,7 @@
 					<p class="hidden md:block px-1">{$ndk.activeUser?.profile?.name}</p>
 				{/if}
 			</Button>
-			<Dropdown triggeredBy="#avatar-button" class="w-56" bind:open={dropdownOpen}>
+			<Dropdown triggeredBy="#avatar-button" class="w-56" bind:open={dropdownOpen} >
 				{#if $ndk.activeUser}
 					<DropdownHeader>
 						<span class="block text-sm"
@@ -94,7 +94,7 @@
 	<div class="grid grid-cols-[1fr_min-content_auto_min-content_1fr]">
 		{#key sidebarOpen}
 			<div
-				class="fixed h-full top-0 left-0
+				class="fixed h-screen top-0 left-0
 						{sidebarOpen ? '' : 'hidden'} w-screen bg-gray-900/80"
 				in:fade
 				out:fade
