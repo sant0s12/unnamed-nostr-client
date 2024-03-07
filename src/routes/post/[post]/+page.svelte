@@ -33,8 +33,10 @@
 				{/if}
 				<p class="dark:text-white break-words">{post.content}</p>
 				<PostInteraction {post} />
+				<div class="pt-2">
+					<ReplyThread isRoot event={post} rootId={post.id} />
+				</div>
 			</div>
-			<ReplyThread isRoot event={post} rootId={post.id} />
 		{/if}
 	{:catch error}
 		<p>{error}</p>
