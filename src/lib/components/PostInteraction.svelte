@@ -3,12 +3,21 @@
 	import { getPostReactions, CommunityPost } from '$lib/nostr';
 	import ndk from '$lib/stores/ndk';
 	import { Button, ButtonGroup, Spinner } from 'flowbite-svelte';
-	import { ChevronDownOutline, ChevronUpOutline, MessageDotsSolid } from 'flowbite-svelte-icons';
+	import {
+		ChevronDownOutline,
+		ChevronUpOutline,
+		MessageDotsSolid,
+		ReplyOutline,
+		ReplySolid
+	} from 'flowbite-svelte-icons';
 	import { kinds } from 'nostr-tools';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-french-toast';
+	import ReplyThread from './ReplyThread.svelte';
 
 	export let post: CommunityPost;
+	export let hideCommentsButton = false;
+	export let showReplyButton = false;
 
 	let comments = 0;
 
@@ -93,7 +102,7 @@
 	}
 </script>
 
-<div class="flex flex-row w-full pt-2 space-x-2 items-stretch h-10">
+<div class="flex flex-row w-full space-x-2 h-8">
 	<ButtonGroup>
 		<Button
 			disabled={clickedVote != 0}
@@ -122,9 +131,17 @@
 			{/if}
 		</Button>
 	</ButtonGroup>
-	<Button href="{base}/post/{post.id}" color="alternative" size="xs">
-		<MessageDotsSolid class="me-1" />
-		{comments}
-	</Button>
+	{#if !hideCommentsButton}
+		<Button href="{base}/post/{post.id}" color="alternative" size="xs">
+			<MessageDotsSolid class="me-1" />
+			{comments}
+		</Button>
+	{/if}
+	{#if showReplyButton}
+		<Button outline={false} class="!focus:outline-0 py-1 px-1 border-0" color="light" size="xs">
+			<ReplyOutline size="sm" class="me-1" />
+			Reply
+		</Button>
+	{/if}
 	<div class="ml-auto"></div>
 </div>

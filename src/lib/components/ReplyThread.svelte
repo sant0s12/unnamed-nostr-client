@@ -3,6 +3,7 @@
 	import ndk from '$lib/stores/ndk';
 	import { Button } from 'flowbite-svelte';
 	import { ChevronDoubleDownOutline, ChevronDoubleDownSolid } from 'flowbite-svelte-icons';
+	import Comment from './Comment.svelte';
 
 	export let event: NDKEvent;
 
@@ -43,9 +44,7 @@
 		{#if isRoot || showNested > 0}
 			{#each directChildren as child}
 				<li class="ml-2 space-y-2">
-					<p class="border">
-						{child.content}
-					</p>
+					<Comment post={child} showCommunity={false} />
 					<svelte:self event={child} {rootId} showNested={showNested - 1} />
 				</li>
 			{/each}

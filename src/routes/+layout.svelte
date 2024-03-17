@@ -91,7 +91,7 @@
 		</Navbar>
 	</header>
 
-	<div class="grid grid-cols-[1fr_min-content_minmax(0,640px)_min-content_1fr]">
+	<div class="grid grid-cols-[0.8fr_min-content_minmax(0,768px)_min-content_1fr]">
 		{#key sidebarOpen}
 			<div
 				class="fixed h-screen top-0 left-0
